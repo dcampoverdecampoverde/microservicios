@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from admin_app.models import RolesMenu, Roles, MenuOpcion, Acciones
+from admin_app.models import *
 
 class RolesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -27,6 +27,7 @@ class AccionesSerializer(serializers.ModelSerializer):
 
         )
 
+#Serializador que permite registrar un nuevo registro
 class RolesMenuRegistroSerializer(serializers.ModelSerializer):
     class Meta:
         model = RolesMenu
@@ -41,7 +42,7 @@ class RolesMenuRegistroSerializer(serializers.ModelSerializer):
             'usuario_creacion',
             'ip_creacion')
 
-
+#Serializador que permite consultar listado
 class RolesMenuSerializer(serializers.ModelSerializer):
     class Meta:
         model=RolesMenu
@@ -59,6 +60,7 @@ class RolesMenuSerializer(serializers.ModelSerializer):
             'usuario_modificacion',
             'ip_modificacion']
 
+#Serializador que permite actualizar un registro
 class RolesMenuActualizarSerializer(serializers.ModelSerializer):
     class Meta:
         model=RolesMenu
@@ -71,3 +73,42 @@ class RolesMenuActualizarSerializer(serializers.ModelSerializer):
             'fecha_modificacion',
             'usuario_modificacion',
             'ip_modificacion']
+
+class RolesMenuAccionRegistroSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=RolesMenuAccion
+        fields=[
+            'rolmenuaccion_id',
+            'estado',
+            'rolmenu_id',
+            'accion_id',
+            'usuario_creacion',
+            'ip_creacion'
+        ]
+
+class RolesMenuAccionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RolesMenuAccion
+        fields = [
+            'rolmenuaccion_id',
+            'estado',
+            'rolmenu_id',
+            'accion_id',
+            'usuario_creacion',
+            'ip_creacion',
+            'fecha_modificacion',
+            'usuario_modificacion',
+            'ip_modificacion'
+        ]
+
+class RolesMenuAccionActualizarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=RolesMenuAccion
+        fields=[
+            'estado',
+            'rolmenu_id',
+            'accion_id',
+            'fecha_modificacion',
+            'usuario_modificacion',
+            'ip_modificacion'
+        ]

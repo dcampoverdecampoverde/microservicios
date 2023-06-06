@@ -17,7 +17,9 @@ from django.contrib import admin
 from django.urls import path, include
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from admin_app.api.router import router_default
+from lista_negra.api.router import router_default_LN
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -37,5 +39,8 @@ urlpatterns = [
     path('redocs/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     #Aqui se llama al router del Usuario
     path('api/', include('users_system.api.router')),
-    path('api/',include(router_default.urls))
+    path('api/',include(router_default.urls)),
+    path('api/transaction/',include(router_default_LN.urls)),
+    path('schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('schema/docs/', SpectacularSwaggerView.as_view(url_name='schema')),
 ]

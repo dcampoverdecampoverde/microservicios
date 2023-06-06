@@ -2,9 +2,9 @@ from django.db import models
 from users_system.models import Usuario
 
 class black_imsi(models.Model):
-    imsi = models.CharField(max_length=15, primary_key=True)
+    imsi = models.CharField(max_length=15, primary_key=True, error_messages={'unique':'Codigo IMSI ya se encuentra registrado'})
     source = models.CharField(max_length=50, null=True)
-    register = models.DateTimeField(null=True)
+    register = models.DateTimeField(auto_now_add=True, null=True)
 
 class log_aprov_eir(models.Model):
     log_id = models.BigAutoField(primary_key=True)
@@ -15,7 +15,7 @@ class log_aprov_eir(models.Model):
     lista = models.CharField(max_length=100, null=True) #que tipo de lista es, blanca, negra
     razon = models.CharField(max_length=100, null=True) #motivo por el cual fue enviado a lista negra
     origen = models.CharField(max_length=100, null=True) #origen: si vino del front-end, proceso masivo
-    fecha_bitacora = models.DateTimeField("When Created",auto_now_add=True)
+    fecha_bitacora = models.DateTimeField(auto_now_add=True)
     descripcion = models.CharField(max_length=500, null=True)
     usuario_id = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True)
     usuario_descripcion = models.CharField(max_length=50, null=True)

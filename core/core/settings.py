@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     "corsheaders",
+    'drf_spectacular',
     'users_system',
     'admin_app',
     'lista_negra'
@@ -130,6 +131,12 @@ USE_TZ = True
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES':(
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PARSER_CLASSES': (
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
     )
 }
 
