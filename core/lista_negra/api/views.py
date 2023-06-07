@@ -1,4 +1,6 @@
-from drf_spectacular.utils import extend_schema
+from drf_yasg.openapi import FORMAT_DATE
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from rest_framework.viewsets import ViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -7,7 +9,44 @@ from lista_negra.models import *
 from lista_negra.api.serializers import *
 class ListaNegraViewSet(ViewSet):
     #permission_classes = [IsAuthenticated]
-    @extend_schema(responses=ListaNegraRegistroSerializer)
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['imsi','origen','usuario_id'],
+            properties={
+                'imsi': openapi.Schema(type=openapi.TYPE_STRING,
+                                        description="Codigo IMSI que se va registrar",
+                                        max_length=15),
+                'operadora': openapi.Schema(type=openapi.TYPE_STRING,
+                                       description="Se reciben valores {'claro','telefonica','cnt','otros' }",
+                                       max_length=15),
+                'lista': openapi.Schema(type=openapi.TYPE_STRING,
+                                       description="Se reciben valores {'blanca','gris','negra'}",
+                                       max_length=10),
+                'razon': openapi.Schema(type=openapi.TYPE_STRING,
+                                       description="Descripcion cual fue el motivo del bloqueo del codigo IMSI",
+                                       max_length=1000),
+                'origen': openapi.Schema(type=openapi.TYPE_STRING,
+                                       description="Se reciben los siguientes valores: {'api','front','bulk'}",
+                                       max_length=10),
+                'usuario_id': openapi.Schema(type=openapi.TYPE_INTEGER,
+                                       description="Codigo de usuario que debe estar registrado en el sistema y con permisos para ingresar IMSI")
+                #'visit_at': openapi.Schema(type=openapi.TYPE_STRING,
+                #                           format=FORMAT_DATE)
+            }
+        ),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'store': openapi.Schema(type=openapi.TYPE_STRING,
+                                            max_length=255),
+                    'has_milk': openapi.Schema(type=openapi.TYPE_BOOLEAN)
+                }
+            )
+        }
+    )
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
         if len(info["imsi"]) <15 or len(info["imsi"]) >16:
@@ -53,7 +92,6 @@ class ListaNegraViewSet(ViewSet):
             )
             return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
 
-    @extend_schema(responses=ListaNegraSerializer)
     def retrieve(self, request, pk=None):
         info = request.POST if request.POST else request.data if request.data else None
         if len(info["imsi"]) <15 or len(info["imsi"]) >16:
@@ -100,7 +138,6 @@ class ListaNegraViewSet(ViewSet):
 
 
 
-    @extend_schema(responses=ListaNegraEliminarSerializer)
     def destroy(self, request, *args, **kwargs):
         info = request.POST if request.POST else request.data if request.data else None
         if len(info["imsi"]) <15 or len(info["imsi"]) >16:
