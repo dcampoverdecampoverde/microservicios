@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from users_system.api.serializers import UsuarioRegistroSerializer, UsuarioSerializer
 
 class RegistroUsuarioView(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         serializer = UsuarioRegistroSerializer(data=request.data)
         response ={
@@ -21,5 +22,5 @@ class RegistroUsuarioView(APIView):
 class UsuarioView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
-        serializer = UsuarioSerializer(request.user)
+        serializer = UsuarioSerializer(Usuario.objects.all(), many=True) #request.user
         return Response(serializer.data)

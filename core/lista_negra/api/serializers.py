@@ -37,3 +37,18 @@ class ListaNegraSerializer(serializers.ModelSerializer):
             'source',
             'register',
             ]
+
+class LogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=log_aprov_eir
+        fields =[
+            'accion',
+            'imsi',
+            'operadora',
+            'lista',
+            'razon',
+            'origen',
+            'fecha_bitacora',
+            'descripcion',
+            'usuario_descripcion',
+            ]

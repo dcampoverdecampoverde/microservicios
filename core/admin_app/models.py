@@ -26,7 +26,7 @@ class MenuOpcion(models.Model):
     ip_modificacion = models.CharField(max_length=20, default=None, blank=True)
 
 class Acciones(models.Model):
-    accion_id = models.BigAutoField(primary_key=True)
+    accion_id = models.IntegerField(primary_key=True)
     estado = models.CharField(max_length=1)
     descripcion = models.CharField(max_length=50)
     id_componente_html = models.CharField(max_length=100)

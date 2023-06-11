@@ -4,8 +4,10 @@ from rest_framework import status
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Q
 from admin_app.models import *
 from admin_app.api.serializers import *
+from users_system.models import Usuario
 
 #<editor-fold desc="Serializadores utilizados para los parametrizadores de RolesMenu y RolesMenuAccion">
 
@@ -25,6 +27,32 @@ class AccionesViewSet(ViewSet):
         return Response(status=status.HTTP_200_OK, data=serializer.data)
 
 #</editor-fold>
+
+class RolesMenuUsuarioViewSet(ViewSet):
+    #permission_classes = [IsAuthenticated]
+    def create(self, request):
+        info = request.POST if request.POST else request.data if request.data else None
+        try:
+            #buscando el rol del usuario
+            usuario_login = Usuario.objects.get(username = info["usuario_id"])
+            if usuario_login.rol_id is None:
+                menu_encontrados = RolesMenu.objects.filter(estado="A")
+            else:
+                menu_encontrados = RolesMenu.objects.filter(Q(estado__contains="A") & Q(rol_id__contains=usuario_login.rol_id))
+
+            menu_opciones_usuario = [{}]
+
+            for item_rolmenu in menu_encontrados:
+                menu = MenuOpcion.objects.get(menu_id=item_rolmenu.menu_id_id)
+                data_menu_encontrado ={
+                    "descripcion":menu.descripcion,
+                    "url_page": menu.url_page
+                }
+                menu_opciones_usuario.append(data_menu_encontrado)
+                return Response(status=status.HTTP_200_OK, data=menu_opciones_usuario)
+
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=str(e))
 
 class RolesMenuViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
