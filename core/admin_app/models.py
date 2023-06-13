@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Roles(models.Model):
-    rol_id = models.BigAutoField(primary_key=True)
+    rol_id = models.IntegerField(primary_key=True)
     estado = models.CharField(max_length=1, default="A")
     descripcion = models.CharField(max_length=50)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
@@ -11,6 +11,10 @@ class Roles(models.Model):
     fecha_modificacion = models.DateTimeField(null=True, default=None, blank=True)
     usuario_modificacion = models.CharField(max_length=15, default=None, blank=True)
     ip_modificacion = models.CharField(max_length=20, default=None, blank=True)
+
+    def __str__(self):
+        return self.descripcion
+
 
 class MenuOpcion(models.Model):
     menu_id = models.BigAutoField(primary_key=True)
@@ -25,6 +29,10 @@ class MenuOpcion(models.Model):
     usuario_modificacion = models.CharField(max_length=15, default=None, blank=True)
     ip_modificacion = models.CharField(max_length=20, default=None, blank=True)
 
+    def __str__(self):
+        return self.descripcion
+
+
 class Acciones(models.Model):
     accion_id = models.IntegerField(primary_key=True)
     estado = models.CharField(max_length=1)
@@ -36,6 +44,10 @@ class Acciones(models.Model):
     fecha_modificacion = models.DateTimeField(null=True, default=None, blank=True)
     usuario_modificacion = models.CharField(max_length=15, default=None, blank=True)
     ip_modificacion = models.CharField(max_length=20, default=None, blank=True)
+
+    def __str__(self):
+        return self.descripcion
+
 
 class RolesMenu(models.Model):
     rolmenu_id = models.BigAutoField(primary_key=True)
@@ -50,6 +62,7 @@ class RolesMenu(models.Model):
     fecha_modificacion = models.DateTimeField(null=True, default=None, blank=True)
     usuario_modificacion = models.CharField(max_length=15, null=True, default=None, blank=True)
     ip_modificacion = models.CharField(max_length=20, null=True, default=None, blank=True)
+
 
 class RolesMenuAccion(models.Model):
     rolmenuaccion_id = models.BigAutoField(primary_key=True)
