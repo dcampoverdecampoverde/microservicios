@@ -8,6 +8,7 @@ from drf_yasg.openapi import FORMAT_DATE
 from drf_yasg.utils import swagger_auto_schema
 from lista_negra.api.serializers import *
 from lista_negra.models import *
+from lista_negra.validators.validator_lista_negra import ValidatorListaNegra
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -26,7 +27,7 @@ class ListaNegraRegistroViewSet(ViewSet):
                                        description="Codigo IMSI que se va registrar",
                                        max_length=15),
                 'operadora': openapi.Schema(type=openapi.TYPE_STRING,
-                                            description="Se reciben valores {'claro','telefonica','cnt','otros' }",
+                                            description="Se reciben valores {'claro','telefonica','cnt','otros','masivo' }",
                                             max_length=15),
                 'lista': openapi.Schema(type=openapi.TYPE_STRING,
                                         description="Se reciben valores {'blanca','gris','negra'}",
@@ -69,45 +70,36 @@ class ListaNegraRegistroViewSet(ViewSet):
     )
     def create(self, request):
         log_imsi = RegistroLog()
+        validator = ValidatorListaNegra()
         info = request.POST if request.POST else request.data if request.data else None
 
         try:
-            # Se hace una validacion de los parametros lista, operadora y origen
-            # para verificar si se esta recibiendo los calores que corresponden
-            # segun lo definido en el config.json
-            path = apps.get_app_config('lista_negra').path
-            config = open(path + '\\config\\config.json')
-            data = json.load(config)
 
             # Evaluando Operadora
-            existe_lista = list(filter(lambda x: x["valor"] == info['lista'], data["valores_lista"]))
-            if len(existe_lista) <= 0:
+            message_validator_request_operadora = validator.validator_parameter_operadora(info['operadora'])
+            if len(message_validator_request_operadora) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error",
-                                      "mensaje": "El parametro {lista} tiene un valor que no es reconocible en la configuracion de los posibles valores que puede recibir. Revisar la documentacion"})
+                                      "mensaje": message_validator_request_operadora})
 
             # Evaluando Origen
-            existe_origen = list(filter(lambda x: x["valor"] == info['source'], data["valores_origen"]))
-            if len(existe_origen) <= 0:
+            message_validator_request_origen = validator.validator_parameter_origen(info['source'])
+            if len(message_validator_request_origen) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error",
-                                      "mensaje": "El parametro {origen} tiene un valor que no es reconocible en la configuracion de los posibles valores que puede recibir. Revisar la documentacion"})
+                                      "mensaje": message_validator_request_origen})
 
-            # Evaluando Operadora
-            existe_operadora = list(filter(lambda x: x["valor"] == info['operadora'], data["valores_operadora"]))
-            if len(existe_operadora) <= 0:
+            # Evaluando Lista
+            message_validator_request_lista = validator.validator_parameter_lista(info['lista'])
+            if len(message_validator_request_lista) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error",
-                                      "mensaje": "El parametro {operadora} tiene un valor que no es reconocible en la configuracion de los posibles valores que puede recibir. Revisar la documentacion"})
+                                      "mensaje": message_validator_request_lista})
 
-            if len(info["imsi"]) < 15 or len(info["imsi"]) > 16:
-                log_imsi.grabar('Ingreso', info["imsi"], info["operadora"], info["lista"], info["razon"],
-                                info["source"],
-                                "error: El codigo IMSI tiene una longitud incorrecta",
-                                info["usuario_id"]
-                                )
+            message_validator_length_imsi = validator.validator_length_imsi(info['imsi'])
+            if len(message_validator_length_imsi) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error", "mensaje": "El codigo IMSI tiene una longitud incorrecta"})
+                                data={"estado": "error", "mensaje": message_validator_length_imsi})
 
             serializer = ListaNegraRegistroSerializer(data=info)
             if serializer.is_valid(raise_exception=True):
@@ -124,22 +116,27 @@ class ListaNegraRegistroViewSet(ViewSet):
                                 serializer.errors,
                                 info["usuario_id"]
                                 )
+
                 return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
 
 
         except DatabaseError as e:
+
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
         except FileNotFoundError as e:
+
             return Response(status=status.HTTP_400_BAD_REQUEST,
                             data={"estado": "error", "mensaje": "archivo config.json no ha podido ser encontrado"})
         except Exception as e1:
+
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e1)})
 
     # def destroy(self, request, *args, **kwargs):
 
 
 class ListaNegraConsultaViewSet(ViewSet):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
+
     @swagger_auto_schema(
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
@@ -186,54 +183,47 @@ class ListaNegraConsultaViewSet(ViewSet):
     def create(self, request):
 
         log_imsi = RegistroLog()
+        validator = ValidatorListaNegra()
         info = request.POST if request.POST else request.data if request.data else None
 
         try:
 
-            # Se hace una validacion de los parametros lista, operadora y origen
-            # para verificar si se esta recibiendo los calores que corresponden
-            # segun lo definido en el config.json
-            path = apps.get_app_config('lista_negra').path
-            config = open(path + '\\config\\config.json')
-            data = json.load(config)
-
-            # Evaluando Origen
-            existe_origen = list(filter(lambda x: x["valor"] == info['origen'], data["valores_origen"]))
-            if len(existe_origen) <= 0:
+            message_validator_request_origen = validator.validator_parameter_origen(info['origen'])
+            if len(message_validator_request_origen) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error",
-                                      "mensaje": "El parametro origen tiene un valor que no es reconocible en la configuracion de los posibles valores que puede recibir. Revisar la documentacion"})
+                                      "mensaje": message_validator_request_origen})
 
-            if len(info["imsi"]) < 15 or len(info["imsi"]) > 16:
+            message_validator_length_imsi = validator.validator_length_imsi(info['imsi'])
+            if len(message_validator_length_imsi) > 0:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error", "mensaje": message_validator_length_imsi})
+
+            # log_imsi.grabar('Consulta', info["imsi"], None, None, None, info["origen"],
+            #                "error: El codigo IMSI tiene una longitud incorrecta",
+            #                info["usuario_id"]
+            #                )
+            value_validator_exists_imsi = validator.validator_exists_imsi(info['imsi'])
+            if value_validator_exists_imsi:
+                serializer_data_imsi = ListaNegraSerializer(black_imsi.objects.filter(imsi=info['imsi']), many=True)
+                data_response = {
+                    "estado": "ok",
+                    "mensaje": "ok",
+                    "data": serializer_data_imsi.data,
+                }
                 log_imsi.grabar('Consulta', info["imsi"], None, None, None, info["origen"],
-                                "error: El codigo IMSI tiene una longitud incorrecta",
+                                "Consulta Ok",
                                 info["usuario_id"]
                                 )
-                return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error", "mensaje": "El codigo IMSI tiene una longitud incorrecta"})
+                return Response(status=status.HTTP_200_OK, data=data_response)
+            else:
+                data_response = {
+                    "estado": "no_exists",
+                    "mensaje": "Codigo IMSI No existe",
+                    "data": None,
+                }
+                return Response(status=status.HTTP_200_OK, data=data_response)
 
-            serializer = ListaNegraSerializer(black_imsi.objects.get(pk=info['imsi']), many=True)
-            # data_log = list(log_aprov_eir.objects.filter(imsi=info['imsi']))
-            # serializer_log = LogSerializer(log_aprov_eir.objects.filter(imsi=info['imsi']), many=True)
-            # data_response = {
-            #    "imsi": lista_encontrada.imsi,
-            #    "origen": lista_encontrada.source,
-            #   "register": lista_encontrada.register,
-            #    "data_log": serializer_log.data
-            # }
-
-            log_imsi.grabar('Consulta', info["imsi"], None, None, None, info["origen"],
-                            "Consulta Ok",
-                            info["usuario_id"]
-                            )
-            return Response(status=status.HTTP_200_OK, data=serializer.data)
-        except black_imsi.DoesNotExist as e:
-            log_imsi.grabar('Consulta', info["imsi"], None, None, None, info["origen"],
-                            "Codigo Imsi NO Existe",
-                            info["usuario_id"]
-                            )
-            return Response(status=status.HTTP_400_BAD_REQUEST,
-                            data={"estado": "error", "mensaje": "Codigo Imsi NO Existe"})
         except DatabaseError as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
         except FileNotFoundError as e:
@@ -290,46 +280,44 @@ class ListaNegraEliminarViewSet(ViewSet):
     )
     def create(self, request):
         log_imsi = RegistroLog()
+        validator = ValidatorListaNegra()
         info = request.POST if request.POST else request.data if request.data else None
 
         try:
 
-            # Se hace una validacion de los parametros lista, operadora y origen
-            # para verificar si se esta recibiendo los calores que corresponden
-            # segun lo definido en el config.json
-            path = apps.get_app_config('lista_negra').path
-            config = open(path + '\\config\\config.json')
-            data = json.load(config)
-
-            # Evaluando Origen
-            existe_origen = list(filter(lambda x: x["valor"] == info['origen'], data["valores_origen"]))
-            if len(existe_origen) <= 0:
+            message_validator_request_origen = validator.validator_parameter_origen(info['origen'])
+            if len(message_validator_request_origen) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error",
-                                      "mensaje": "El parametro origen tiene un valor que no es reconocible en la configuracion de los posibles valores que puede recibir. Revisar la documentacion"})
+                                      "mensaje": message_validator_request_origen})
 
-            if len(info["imsi"]) < 15 or len(info["imsi"]) > 16:
+            message_validator_length_imsi = validator.validator_length_imsi(info['imsi'])
+            if len(message_validator_length_imsi) > 0:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error", "mensaje": message_validator_length_imsi})
+
+            value_validator_exists_imsi = validator.validator_exists_imsi(info['imsi'])
+            if value_validator_exists_imsi:
+                obj_listanegra = black_imsi.objects.get(pk=info["imsi"])
+                obj_listanegra.delete()
                 log_imsi.grabar('Eliminar', info["imsi"], None, None, None, info["origen"],
-                                "error: El codigo IMSI tiene una longitud incorrecta",
+                                "Eliminacion Ok",
                                 info["usuario_id"]
                                 )
-                return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error", "mensaje": "El codigo IMSI tiene una longitud incorrecta"})
+                data_response = {
+                    "estado": "ok",
+                    "mensaje": "Operacion Correcta",
+                    "data": None,
+                }
+                return Response(status=status.HTTP_200_OK, data=data_response)
+            else:
+                data_response = {
+                    "estado": "no_exists",
+                    "mensaje": "Codigo IMSI No existe",
+                    "data": None,
+                }
+                return Response(status=status.HTTP_200_OK, data=data_response)
 
-            obj_listanegra = black_imsi.objects.get(pk=info["imsi"])
-            obj_listanegra.delete()
-            log_imsi.grabar('Eliminar', info["imsi"], None, None, None, info["origen"],
-                            "Eliminacion Ok",
-                            info["usuario_id"]
-                            )
-            return Response(status=status.HTTP_200_OK, data={"estado": "ok", "mensaje": "operacion correcta"})
-        except black_imsi.DoesNotExist as e:
-            log_imsi.grabar('Eliminar', info["imsi"], None, None, None, info["origen"],
-                            "error: codigo IMSI no existe",
-                            info["usuario_id"]
-                            )
-            return Response(status=status.HTTP_400_BAD_REQUEST,
-                            data={"estado": "error", "mensaje": "Codigo Imsi NO Existe"})
         except DatabaseError as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
         except Exception as e1:

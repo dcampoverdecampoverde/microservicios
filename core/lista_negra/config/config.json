@@ -1,5 +1,41 @@
 {
-  "valores_origen": [{"valor": "api"},{"valor": "front"},{"valor": "bulk"}],
-  "valores_operadora": [{"valor": "claro"},{"valor": "telefonica"},{"valor": "cnt"},{"valor": "otros"}],
-  "valores_lista": [{"valor": "blanca"},{"valor": "negra"},{"valor": "gris"}]
+  "valores_origen": [
+    {
+      "valor": "api"
+    },
+    {
+      "valor": "front"
+    },
+    {
+      "valor": "bulk"
+    }
+  ],
+  "valores_operadora": [
+    {
+      "valor": "claro"
+    },
+    {
+      "valor": "telefonica"
+    },
+    {
+      "valor": "cnt"
+    },
+    {
+      "valor": "otros"
+    },
+    {
+      "valor": "masivo"
+    }
+  ],
+  "valores_lista": [
+    {
+      "valor": "blanca"
+    },
+    {
+      "valor": "negra"
+    },
+    {
+      "valor": "gris"
+    }
+  ]
 }
