@@ -1,7 +1,6 @@
 from admin_app.api.serializers import *
 from admin_app.models import *
 from django.db.models import Q
-from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -63,7 +62,6 @@ class RolesMenuUsuarioViewSet(ViewSet):
 class RolesMenuViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(responses=RolesMenuSerializer)
     def list(self, request):
         serializer = RolesMenuSerializer(RolesMenu.objects.all(), many=True)
         return Response(status=status.HTTP_200_OK, data=serializer.data)
@@ -71,7 +69,7 @@ class RolesMenuViewSet(ViewSet):
     # def retrieve(self, request, roles_id):
     #    pass
 
-    @extend_schema(responses=RolesMenuRegistroSerializer)
+    # @extend_schema(responses=RolesMenuRegistroSerializer)
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
         serializer = RolesMenuRegistroSerializer(data=info)
@@ -81,7 +79,7 @@ class RolesMenuViewSet(ViewSet):
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
 
-    @extend_schema(responses=RolesMenuActualizarSerializer)
+    # @extend_schema(responses=RolesMenuActualizarSerializer)
     def partial_update(self, request, pk=None):
         info = request.POST if request.POST else request.data if request.data else None
         obj_rolesmenuaccion = RolesMenu.objects.get(pk=pk)
@@ -96,12 +94,12 @@ class RolesMenuViewSet(ViewSet):
 class RolesMenuAccionViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(responses=RolesMenuAccionSerializer)
+    # @extend_schema(responses=RolesMenuAccionSerializer)
     def list(self, request):
         serializer = RolesMenuAccionSerializer(RolesMenuAccion.objects.all(), many=True)
         return Response(status=status.HTTP_200_OK, data=serializer.data)
 
-    @extend_schema(responses=RolesMenuAccionRegistroSerializer)
+    # @extend_schema(responses=RolesMenuAccionRegistroSerializer)
     async def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
         serializer = RolesMenuAccionRegistroSerializer(data=info)
@@ -111,7 +109,7 @@ class RolesMenuAccionViewSet(ViewSet):
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
 
-    @extend_schema(responses=RolesMenuAccionActualizarSerializer)
+    # @extend_schema(responses=RolesMenuAccionActualizarSerializer)
     def partial_update(self, request, pk=None):
         info = request.POST if request.POST else request.data if request.data else None
         obj_rolesmenu = RolesMenuAccion.objects.get(pk=pk)
