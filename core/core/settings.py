@@ -82,7 +82,10 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'admin_imsi',
+        'NAME': 'eirdb',
+        'OPTIONS': {
+            'options': '-c search_path=eir_catalog'
+        },
         'USER': 'postgres',
         'PASSWORD': 'password',
         'HOST': '192.168.1.15',

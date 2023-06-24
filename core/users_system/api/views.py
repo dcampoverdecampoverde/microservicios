@@ -2,9 +2,24 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from users_system.api.serializers import UsuarioRegistroSerializer, UsuarioSerializer
 from users_system.models import Usuario
+
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            info = request.POST if request.POST else request.data if request.data else None
+            refresh_token = info['refresh_token']
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=str(e))
 
 
 class RegistroUsuarioView(APIView):
@@ -15,7 +30,7 @@ class RegistroUsuarioView(APIView):
             serializer = UsuarioRegistroSerializer(data=request.data)
             response = {
                 "estado": "ok",
-                "descripcion": "ok",
+                "descripcion": "operacion correcta",
             }
             if serializer.is_valid():
                 serializer.save()

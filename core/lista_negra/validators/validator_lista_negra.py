@@ -1,6 +1,7 @@
 import json
 
 from django.apps import apps
+
 from lista_negra.models import *
 
 
@@ -53,7 +54,7 @@ class ValidatorListaNegra():
 
     def validator_length_imsi(self, codigo_imsi):
         mensaje_return = ""
-        if len(codigo_imsi) < 15 or len(codigo_imsi) > 16:
+        if len(str(codigo_imsi)) < 15 or len(str(codigo_imsi)) > 16:
             mensaje_return = "El codigo IMSI tiene una longitud incorrecta"
 
         return mensaje_return

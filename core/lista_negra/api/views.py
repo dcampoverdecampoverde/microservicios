@@ -1,18 +1,19 @@
 import json
 
-from clases.registro_log import RegistroLog
 from django.apps import apps
 from django.db import DatabaseError
 from drf_yasg import openapi
 from drf_yasg.openapi import FORMAT_DATE
 from drf_yasg.utils import swagger_auto_schema
-from lista_negra.api.serializers import *
-from lista_negra.models import *
-from lista_negra.validators.validator_lista_negra import ValidatorListaNegra
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
+
+from clases.registro_log import RegistroLog
+from lista_negra.api.serializers import *
+from lista_negra.models import *
+from lista_negra.validators.validator_lista_negra import ValidatorListaNegra
 
 
 class ListaNegraRegistroViewSet(ViewSet):
@@ -360,4 +361,51 @@ class ParametrosOperadoraView(ViewSet):
             data_response = data["valores_operadora"]
             return Response(status=status.HTTP_200_OK, data=data_response)
         except Exception as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e1)})
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
+
+
+class ArchivoMasivoViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        try:
+            serializer = FileProcessSerializer(
+                files_process_bulk.objects.all(),
+                many=True)
+            return Response(status=status.HTTP_200_OK, data=serializer.data)
+        except Exception as e:
+            data_response = {
+                'estado': 'error',
+                'mensaje': str(e)
+            }
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=data_response)
+
+    def create(self, request):
+        info = request.POST if request.POST else request.data if request.data else None
+        try:
+            data_request = {
+                'estado': 'pendiente',
+                'archivo_csv': info['nombre_archivo_csv'],
+                'usuario_registro': info['usuario_id'],
+                'ip_registro': '0.0.0.0'
+            }
+            serializer = FileProcessRegistroSerializer(data=data_request)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+            data_response = {
+                'estado': 'ok',
+                'mensaje': 'operacion correcta'
+            }
+            return Response(data=data_response, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
+
+    def partial_update(self, request, pk=None):
+        info = request.POST if request.POST else request.data if request.data else None
+        obj_fileprocessbulk = files_process_bulk.objects.get(pk=pk)
+        serializer = FileProcessActualizarSerializer(obj_fileprocessbulk, data=info, partial=True)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(status=status.HTTP_200_OK, data=serializer.data)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)

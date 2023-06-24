@@ -23,7 +23,7 @@ class FuncionesAdminApp():
             menu_encontrados = RolesMenu.objects.filter(estado="A")
         else:
             menu_encontrados = RolesMenu.objects.filter(
-                Q(estado__contains="A") & Q(rol_id__contains=usuario_login.rol_id))
+                Q(estado="A") & Q(rol_id_id=usuario_login.rol_id_id))
 
         menu_opciones_usuario = [{}]
 

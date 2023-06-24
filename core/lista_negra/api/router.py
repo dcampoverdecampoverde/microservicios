@@ -1,5 +1,6 @@
-from lista_negra.api.views import *
 from rest_framework.routers import DefaultRouter
+
+from lista_negra.api.views import *
 
 router_default_LN = DefaultRouter()
 router_default_LN.register(prefix='lista_negra_registro', basename='lista_negra_registro',
@@ -14,3 +15,5 @@ router_default_LN.register(prefix='log_consulta_usuario', basename='log_consulta
                            viewset=LogXUsuarioViewSet)
 router_default_LN.register(prefix='log_consulta_imsi', basename='log_consulta_usuario',
                            viewset=LogXIMSIViewSet)
+router_default_LN.register(prefix='archivo_masivo', basename='archivo_masivo',
+                           viewset=ArchivoMasivoViewSet)
