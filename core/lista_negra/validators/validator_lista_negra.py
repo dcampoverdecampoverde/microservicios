@@ -13,7 +13,7 @@ class ValidatorListaNegra():
         # para verificar si se esta recibiendo los calores que corresponden
         # segun lo definido en el config.json
         path = apps.get_app_config('lista_negra').path
-        config = open(path + '\\config\\config.json')
+        config = open(path + r'/config/config.json')
         data = json.load(config)
         # Evaluando Origen
         existe_origen = list(filter(lambda x: x["valor"] == request_operadora, data["valores_operadora"]))
@@ -28,7 +28,7 @@ class ValidatorListaNegra():
         # para verificar si se esta recibiendo los calores que corresponden
         # segun lo definido en el config.json
         path = apps.get_app_config('lista_negra').path
-        config = open(path + '\\config\\config.json')
+        config = open(path + r'/config/config.json')
         data = json.load(config)
         # Evaluando Origen
         existe_origen = list(filter(lambda x: x["valor"] == request_lista, data["valores_lista"]))
@@ -43,7 +43,7 @@ class ValidatorListaNegra():
         # para verificar si se esta recibiendo los calores que corresponden
         # segun lo definido en el config.json
         path = apps.get_app_config('lista_negra').path
-        config = open(path + '\\config\\config.json')
+        config = open(path + r'/config/config.json')
         data = json.load(config)
         # Evaluando Origen
         existe_origen = list(filter(lambda x: x["valor"] == request_origen, data["valores_origen"]))
