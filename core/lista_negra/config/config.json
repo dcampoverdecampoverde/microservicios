@@ -43,5 +43,6 @@
     {
       "valor": "masivo"
     }
-  ]
+  ],
+  "ruta_reportes": "c:/temp/report_csv_files/"
 }

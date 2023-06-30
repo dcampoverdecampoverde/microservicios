@@ -59,6 +59,13 @@ class ValidatorListaNegra():
 
         return mensaje_return
 
+    def validator_onlynumber_imsi(self, codigo_imsi):
+        mensaje_return = ""
+        if not codigo_imsi.isdigit():
+            mensaje_return = "El codigo IMSI debe ser un valor numerico"
+
+        return mensaje_return
+
     def validator_exists_imsi(self, codigo_imsi):
         value_exists = True
         if not black_imsi.objects.filter(imsi=codigo_imsi).exists():

@@ -18,22 +18,28 @@ class FuncionesAdminApp():
         return serializer
 
     def consultaMenuOpciones(self, usuario_id):
+
         usuario_login = Usuario.objects.get(username=usuario_id)
+        menu_opciones_usuario = []
+
         if usuario_login.rol_id is None:
-            menu_encontrados = RolesMenu.objects.filter(estado="A")
+            menu_opcion = MenuOpcion.objects.filter(estado="A")
+            for item_opcion in menu_opcion:
+                item_menu = {
+                    "descripcion": item_opcion.descripcion,
+                    "url_page": item_opcion.url_page
+                }
+                menu_opciones_usuario.append(item_menu)
         else:
             menu_encontrados = RolesMenu.objects.filter(
                 Q(estado="A") & Q(rol_id_id=usuario_login.rol_id_id))
-
-        menu_opciones_usuario = [{}]
-
-        for item_rolmenu in menu_encontrados:
-            menu = MenuOpcion.objects.get(menu_id=item_rolmenu.menu_id_id)
-            data_menu_encontrado = {
-                "descripcion": menu.descripcion,
-                "url_page": menu.url_page
-            }
-            menu_opciones_usuario.append(data_menu_encontrado)
+            for item_rolmenu in menu_encontrados:
+                menu = MenuOpcion.objects.get(menu_id=item_rolmenu.menu_id_id)
+                data_menu_encontrado = {
+                    "descripcion": menu.descripcion,
+                    "url_page": menu.url_page
+                }
+                menu_opciones_usuario.append(data_menu_encontrado)
 
         return menu_opciones_usuario
 

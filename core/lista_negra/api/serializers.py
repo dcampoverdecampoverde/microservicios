@@ -61,6 +61,7 @@ class LogSerializer(serializers.ModelSerializer):
             'fecha_bitacora',
             'descripcion',
             'usuario_descripcion',
+            'ip_transaccion',
         ]
 
 

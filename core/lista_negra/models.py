@@ -13,7 +13,7 @@ class log_aprov_eir(models.Model):
     log_id = models.BigAutoField(primary_key=True)
     estado = models.CharField(max_length=1)
     accion = models.CharField(max_length=50)
-    imsi = models.BigIntegerField(null=True)
+    imsi = models.BigIntegerField()
     operadora = models.CharField(max_length=50, null=True)  # la telefonica que envia el codigo
     lista = models.CharField(max_length=50, null=True)  # que tipo de lista es, blanca, negra
     razon = models.CharField(max_length=1000, null=True)  # motivo por el cual fue enviado a lista negra
@@ -22,6 +22,12 @@ class log_aprov_eir(models.Model):
     descripcion = models.CharField(max_length=500, null=True)
     usuario_id = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True)
     usuario_descripcion = models.CharField(max_length=50, null=True)
+    ip_transaccion = models.CharField(max_length=20, null=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['imsi', ]),
+        ]
 
 
 class files_process_bulk(models.Model):
