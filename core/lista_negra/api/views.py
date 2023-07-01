@@ -391,22 +391,58 @@ class LogXUsuarioViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     def create(self, request):
-        info = request.POST if request.POST else request.data if request.data else None
-        serializer_log = LogSerializer(
-            log_aprov_eir.objects.filter(usuario_descripcion=info['usuario_id']).order_by('-fecha_bitacora')[0:100],
-            many=True)
-        return Response(status=status.HTTP_200_OK, data=serializer_log.data)
+        validator = ValidatorListaNegra()
+        try:
+            info = request.POST if request.POST else request.data if request.data else None
+
+            # Evaluando longitud del codigo IMSI
+            message_validator_length_imsi = validator.validator_length_imsi(info['imsi'])
+            if len(message_validator_length_imsi) > 0:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error", "mensaje": message_validator_length_imsi})
+
+            # Evaluando que el codigo IMSI sea solo numeros
+            message_validator_request_onlynumber = validator.validator_onlynumber_imsi(info['imsi'])
+            if len(message_validator_request_onlynumber) > 0:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": message_validator_request_onlynumber})
+
+            serializer_log = LogSerializer(
+                log_aprov_eir.objects.filter(usuario_descripcion=info['usuario_id']).order_by('-fecha_bitacora')[0:100],
+                many=True)
+            return Response(status=status.HTTP_200_OK, data=serializer_log.data)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
 
 
 class LogXIMSIViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     def create(self, request):
-        info = request.POST if request.POST else request.data if request.data else None
-        serializer_log = LogSerializer(
-            log_aprov_eir.objects.filter(imsi=info['imsi']),
-            many=True)
-        return Response(status=status.HTTP_200_OK, data=serializer_log.data)
+        validator = ValidatorListaNegra()
+        try:
+            info = request.POST if request.POST else request.data if request.data else None
+
+            # Evaluando longitud del codigo IMSI
+            message_validator_length_imsi = validator.validator_length_imsi(info['imsi'])
+            if len(message_validator_length_imsi) > 0:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error", "mensaje": message_validator_length_imsi})
+
+            # Evaluando que el codigo IMSI sea solo numeros
+            message_validator_request_onlynumber = validator.validator_onlynumber_imsi(info['imsi'])
+            if len(message_validator_request_onlynumber) > 0:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": message_validator_request_onlynumber})
+
+            serializer_log = LogSerializer(
+                log_aprov_eir.objects.filter(imsi=info['imsi']),
+                many=True)
+            return Response(status=status.HTTP_200_OK, data=serializer_log.data)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
 
 
 class ParametrosOperadoraView(ViewSet):
