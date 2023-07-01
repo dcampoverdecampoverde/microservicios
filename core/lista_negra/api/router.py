@@ -19,3 +19,5 @@ router_default_LN.register(prefix='archivo_masivo', basename='archivo_masivo',
                            viewset=ArchivoMasivoViewSet)
 router_default_LN.register(prefix='reporte_blocked', basename='reporte_blocked',
                            viewset=ReporteBloqueadoViewSet)
+router_default_LN.register(prefix='reporte_unblocked', basename='reporte_unblocked',
+                           viewset=ReporteDesbloqueadoViewSet)

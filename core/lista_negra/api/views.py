@@ -418,7 +418,7 @@ class ParametrosOperadoraView(ViewSet):
             # para verificar si se esta recibiendo los calores que corresponden
             # segun lo definido en el config.json
             path = apps.get_app_config('lista_negra').path
-            config = open(path + '\\config\\config.json')
+            config = open(path + r'/config/config.json')
             data = json.load(config)
             data_response = data["valores_operadora"]
             return Response(status=status.HTTP_200_OK, data=data_response)
@@ -498,6 +498,48 @@ class ReporteBloqueadoViewSet(ViewSet):
         try:
             funcion = FunctionsListaNegra()
             valores_data = funcion.generarReporteBloqueados(info)
+            ruta_archivo = valores_data["ruta_reporte"] + valores_data["nombre_archivo"]
+            # file_download = open(ruta_archivo, 'r')
+            # response = HttpResponse(file_download, content_type='text/csv')
+            # response['Content-Disposition'] = 'attachment; filename="{}"'.format(valores_data["nombre_archivo"])
+            response = HttpResponse(
+                content_type='text/csv',
+            )
+            response['Content-Disposition'] = 'attachment; filename="myfile.csv"'
+
+            writer = csv.writer(response, delimiter="|")
+
+            writer.writerow(
+                ['accion', 'imsi', 'telco', 'list', 'reason', 'souce', 'datetime_operation', 'detail', 'user_id',
+                 'source_ip'])
+
+            for item in valores_data["lista_valores"]:
+                writer.writerow([
+                    item["accion"],
+                    item["imsi"],
+                    item["operadora"],
+                    item["lista"],
+                    item["razon"],
+                    item["origen"],
+                    item["fecha_bitacora"],
+                    item["descripcion"],
+                    item["usuario_descripcion"],
+                    item["ip_transaccion"]
+                ])
+            return response
+            # return Response(data={"estado": "ok", "mensaje": nombre_csv_creado}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReporteDesbloqueadoViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        info = request.POST if request.POST else request.data if request.data else None
+        try:
+            funcion = FunctionsListaNegra()
+            valores_data = funcion.generarReporteDesbloqueados(info)
             ruta_archivo = valores_data["ruta_reporte"] + valores_data["nombre_archivo"]
             # file_download = open(ruta_archivo, 'r')
             # response = HttpResponse(file_download, content_type='text/csv')
