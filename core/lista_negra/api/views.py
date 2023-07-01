@@ -12,9 +12,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
-from clases.registro_log import RegistroLog
 from lista_negra.api.serializers import *
 from lista_negra.functions.functions_lista_negra import FunctionsListaNegra
+from lista_negra.functions.functions_log import RegistroLog
 from lista_negra.models import *
 from lista_negra.validators.validator_lista_negra import ValidatorListaNegra
 

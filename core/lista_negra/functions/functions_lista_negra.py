@@ -19,7 +19,7 @@ class FunctionsListaNegra():
 
     def generarReporteDesbloqueados(self, data_request):
         listado_log_bloqueados = log_aprov_eir.objects.filter(
-            Q(fecha_bitacora__range=[data_request["fecha_inicio"], data_request["fecha_fin"]])
+            Q(fecha_bitacora__date__range=[data_request["fecha_inicio"], data_request["fecha_fin"]])
             &
             Q(accion="DELETE")
         )
