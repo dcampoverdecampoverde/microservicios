@@ -395,19 +395,6 @@ class LogXUsuarioViewSet(ViewSet):
         try:
             info = request.POST if request.POST else request.data if request.data else None
 
-            # Evaluando longitud del codigo IMSI
-            message_validator_length_imsi = validator.validator_length_imsi(info['imsi'])
-            if len(message_validator_length_imsi) > 0:
-                return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error", "mensaje": message_validator_length_imsi})
-
-            # Evaluando que el codigo IMSI sea solo numeros
-            message_validator_request_onlynumber = validator.validator_onlynumber_imsi(info['imsi'])
-            if len(message_validator_request_onlynumber) > 0:
-                return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error",
-                                      "mensaje": message_validator_request_onlynumber})
-
             serializer_log = LogSerializer(
                 log_aprov_eir.objects.filter(usuario_descripcion=info['usuario_id']).order_by('-fecha_bitacora')[0:100],
                 many=True)
@@ -457,6 +444,28 @@ class ParametrosOperadoraView(ViewSet):
             config = open(path + r'/config/config.json')
             data = json.load(config)
             data_response = data["valores_operadora"]
+            return Response(status=status.HTTP_200_OK, data=data_response)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
+
+
+class ParametrosRutaFtpView(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, reques):
+        try:
+            # Se hace una validacion de los parametros lista, operadora y origen
+            # para verificar si se esta recibiendo los calores que corresponden
+            # segun lo definido en el config.json
+            # Windows
+            # config = open(r'C:/Users/dcamp/OneDrive/Documentos/Proyecto_CLARO/Aplicativo/Job_Masivo/config.json')
+            # Linux
+            config = open(r'/var/www/html/jobs/config.json')
+            data = json.load(config)
+            data_response = {
+                "estado": "ok",
+                "mensaje": data["PATH_FTP_CSV"]
+            }
             return Response(status=status.HTTP_200_OK, data=data_response)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
@@ -612,6 +621,14 @@ class ReporteDesbloqueadoViewSet(ViewSet):
 
 class ReporteGeneralLogViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        funcion = FunctionsListaNegra()
+        try:
+            data = funcion.generarSumario()
+            return Response(data={"estado": "ok", "mensaje": data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None

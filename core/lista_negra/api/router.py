@@ -11,6 +11,8 @@ router_default_LN.register(prefix='lista_negra_eliminar', basename='lista_negra_
                            viewset=ListaNegraEliminarViewSet)
 router_default_LN.register(prefix='parametros_operadora', basename='parametros_operadora',
                            viewset=ParametrosOperadoraView)
+router_default_LN.register(prefix='parametros_ruta_ftp', basename='parametros_ruta_ftp',
+                           viewset=ParametrosRutaFtpView)
 router_default_LN.register(prefix='log_consulta_usuario', basename='log_consulta_usuario',
                            viewset=LogXUsuarioViewSet)
 router_default_LN.register(prefix='log_consulta_imsi', basename='log_consulta_usuario',
