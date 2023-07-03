@@ -72,3 +72,12 @@ class ValidatorListaNegra():
             value_exists = False
 
         return value_exists
+
+    def validator_parameters(self, request_data, parametros):
+        parametros_correctos = True
+
+        for item_data in request_data:
+            if item_data not in parametros:
+                parametros_correctos = False
+
+        return parametros_correctos

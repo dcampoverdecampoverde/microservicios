@@ -82,6 +82,15 @@ class ListaNegraRegistroViewSet(ViewSet):
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
 
+            # Evaluando los parametros recibidos:
+            estado_parametros = validator.validator_parameters(info,
+                                                               ['imsi', 'telco', 'reason', 'list', 'source', 'user_id'])
+
+            if estado_parametros == False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": "no se reconoce uno de los parametros enviados en la trama. Por favor revise la documentacion"})
+
             # Evaluando que el valor reason tenga un valor
             if len(info["reason"].strip()) <= 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -214,6 +223,15 @@ class ListaNegraConsultaViewSet(ViewSet):
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
 
+            # Evaluando los parametros recibidos:
+            estado_parametros = validator.validator_parameters(info,
+                                                               ['imsi', 'source', 'user_id'])
+
+            if estado_parametros == False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": "no se reconoce uno de los parametros enviados en la trama. Por favor revise la documentacion"})
+
             # Evaluando que el codigo IMSI sea solo numeros
             message_validator_request_onlynumber = validator.validator_onlynumber_imsi(info['imsi'])
             if len(message_validator_request_onlynumber) > 0:
@@ -327,6 +345,15 @@ class ListaNegraEliminarViewSet(ViewSet):
 
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
+
+            # Evaluando los parametros recibidos:
+            estado_parametros = validator.validator_parameters(info,
+                                                               ['imsi', 'source', 'reason', 'user_id'])
+
+            if estado_parametros == False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": "no se reconoce uno de los parametros enviados en la trama JSON (BodyRequest). Por favor revise la documentacion"})
 
             # Evaluando que llegue un valor de motivo
             if len(info["reason"].strip()) <= 0:

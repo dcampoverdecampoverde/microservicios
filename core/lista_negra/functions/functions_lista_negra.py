@@ -34,7 +34,7 @@ class FunctionsListaNegra():
                     "lista": item_log.lista,
                     "razon": item_log.razon,
                     "origen": item_log.origen,
-                    "fecha_bitacora": item_log.fecha_bitacora,
+                    "fecha_bitacora": item_log.fecha_bitacora.strftime("%d/%m/%Y %H:%M:%S"),
                     "descripcion": item_log.descripcion,
                     "usuario_descripcion": item_log.usuario_descripcion,
                     "ip_transaccion": item_log.ip_transaccion
@@ -79,7 +79,7 @@ class FunctionsListaNegra():
                     "lista": item_log.lista,
                     "razon": item_log.razon,
                     "origen": item_log.origen,
-                    "fecha_bitacora": item_log.fecha_bitacora,
+                    "fecha_bitacora": item_log.fecha_bitacora.strftime("%d/%m/%Y %H:%M:%S"),
                     "descripcion": item_log.descripcion,
                     "usuario_descripcion": item_log.usuario_descripcion,
                     "ip_transaccion": item_log.ip_transaccion
@@ -112,21 +112,19 @@ class FunctionsListaNegra():
             Q(fecha_bitacora__date__range=[data_request["fecha_inicio"], data_request["fecha_fin"]]))
         lista_reporte = []
         for item_log in listado_log_bloqueados:
-            imsi_encontrado = black_imsi.objects.filter(imsi=item_log.imsi)
-            if len(imsi_encontrado) > 0:
-                item_reporte = {
-                    "accion": item_log.accion,
-                    "imsi": item_log.imsi,
-                    "operadora": item_log.operadora,
-                    "lista": item_log.lista,
-                    "razon": item_log.razon,
-                    "origen": item_log.origen,
-                    "fecha_bitacora": item_log.fecha_bitacora,
-                    "descripcion": item_log.descripcion,
-                    "usuario_descripcion": item_log.usuario_descripcion,
-                    "ip_transaccion": item_log.ip_transaccion
-                }
-                lista_reporte.append(item_reporte)
+            item_reporte = {
+                "accion": item_log.accion,
+                "imsi": item_log.imsi,
+                "operadora": item_log.operadora,
+                "lista": item_log.lista,
+                "razon": item_log.razon,
+                "origen": item_log.origen,
+                "fecha_bitacora": item_log.fecha_bitacora.strftime("%d/%m/%Y %H:%M:%S"),
+                "descripcion": item_log.descripcion,
+                "usuario_descripcion": item_log.usuario_descripcion,
+                "ip_transaccion": item_log.ip_transaccion
+            }
+            lista_reporte.append(item_reporte)
 
         # keys = lista_reporte[0].keys()
 
