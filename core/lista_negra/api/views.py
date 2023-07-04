@@ -485,9 +485,9 @@ class ParametrosRutaFtpView(ViewSet):
             # para verificar si se esta recibiendo los calores que corresponden
             # segun lo definido en el config.json
             # Windows
-            # config = open(r'C:/Users/dcamp/OneDrive/Documentos/Proyecto_CLARO/Aplicativo/Job_Masivo/config.json')
+            config = open(r'C:/Users/dcamp/OneDrive/Documentos/Proyecto_CLARO/Aplicativo/Job_Masivo/config.json')
             # Linux
-            config = open(r'/var/www/html/jobs/config.json')
+            # config = open(r'/var/www/html/jobs/config.json')
             data = json.load(config)
             data_response = {
                 "estado": "ok",

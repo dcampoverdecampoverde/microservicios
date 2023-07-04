@@ -150,19 +150,19 @@ class FunctionsListaNegra():
     def generarSumario(self):
         lista_imsi = black_imsi.objects.all()
         # ahora se busca en logs, todos los insert y q existan en la tabla
-        lista_logs = log_aprov_eir.objects.all()
+        # lista_logs = log_aprov_eir.objects.all()
         contador_bloqueados = 0
         contador_desbloqueados = 0
 
-        for item in lista_logs:
-            # existe = item.imsi in lista_imsi
-            if item.accion == "INSERT" and item.descripcion == "Ingreso Ok":
-                contador_bloqueados = contador_bloqueados + 1
-            if lista_logs.filter(imsi=item.imsi).exists() and item.accion == "DELETE":
-                contador_desbloqueados = contador_desbloqueados + 1
+        # for item in lista_logs:
+        #     # existe = item.imsi in lista_imsi
+        #     if item.accion == "INSERT" and item.descripcion == "Ingreso Ok":
+        #         contador_bloqueados = contador_bloqueados + 1
+        #     if lista_logs.filter(imsi=item.imsi).exists() and item.accion == "DELETE":
+        #         contador_desbloqueados = contador_desbloqueados + 1
         data_response = {
             "total_imsi": lista_imsi.count(),
-            "total_bloqueados": contador_bloqueados,
-            "total_desbloqueados": contador_desbloqueados
+            "total_bloqueados": log_aprov_eir.objects.filter(Q(accion="INSERT") & Q(descripcion="Ingreso Ok")).count(),
+            "total_desbloqueados": log_aprov_eir.objects.filter(accion="DELETE").count()
         }
         return data_response
