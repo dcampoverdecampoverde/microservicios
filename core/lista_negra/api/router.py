@@ -25,3 +25,5 @@ router_default_LN.register(prefix='reporte_unblocked', basename='reporte_unblock
                            viewset=ReporteDesbloqueadoViewSet)
 router_default_LN.register(prefix='reporte_logs', basename='reporte_logs',
                            viewset=ReporteGeneralLogViewSet)
+router_default_LN.register(prefix='reporte_summary', basename='reporte_summary',
+                           viewset=ReporteSumarioDetalladoView)

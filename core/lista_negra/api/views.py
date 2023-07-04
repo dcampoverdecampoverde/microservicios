@@ -286,6 +286,13 @@ class ListaNegraConsultaViewSet(ViewSet):
         except Exception as e1:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e1)})
 
+    def list(self, request):
+        try:
+            serializer_data_imsi = ListaNegraSerializer(black_imsi.objects.all(), many=True)
+            return Response(status=status.HTTP_200_OK, data=serializer_data_imsi.data)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
+
 
 class ListaNegraEliminarViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
@@ -485,9 +492,9 @@ class ParametrosRutaFtpView(ViewSet):
             # para verificar si se esta recibiendo los calores que corresponden
             # segun lo definido en el config.json
             # Windows
-            config = open(r'C:/Users/dcamp/OneDrive/Documentos/Proyecto_CLARO/Aplicativo/Job_Masivo/config.json')
+            # config = open(r'C:/Users/dcamp/OneDrive/Documentos/Proyecto_CLARO/Aplicativo/Job_Masivo/config.json')
             # Linux
-            # config = open(r'/var/www/html/jobs/config.json')
+            config = open(r'/var/www/html/jobs/config.json')
             data = json.load(config)
             data_response = {
                 "estado": "ok",
@@ -689,6 +696,38 @@ class ReporteGeneralLogViewSet(ViewSet):
                     item["descripcion"],
                     item["usuario_descripcion"],
                     item["ip_transaccion"]
+                ])
+            return response
+            # return Response(data={"estado": "ok", "mensaje": nombre_csv_creado}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReporteSumarioDetalladoView(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        info = request.POST if request.POST else request.data if request.data else None
+        try:
+            funcion = FunctionsListaNegra()
+            valores_data = funcion.generarSumarioDetallado(info)
+
+            response = HttpResponse(
+                content_type='text/csv',
+            )
+            response['Content-Disposition'] = 'attachment; filename="myfile.csv"'
+
+            writer = csv.writer(response, delimiter="|")
+
+            writer.writerow(
+                ['imsi', 'total_insert', 'total_query', 'total_delete'])
+
+            for item in valores_data:
+                writer.writerow([
+                    item["imsi"],
+                    item["total_insert"],
+                    item["total_query"],
+                    item["total_delete"]
                 ])
             return response
             # return Response(data={"estado": "ok", "mensaje": nombre_csv_creado}, status=status.HTTP_200_OK)
