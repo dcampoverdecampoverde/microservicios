@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -28,10 +29,25 @@ class MenuOpcionViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     def list(self, request):
+        function = FuncionesAdminApp()
         try:
-            function = FuncionesAdminApp()
-            serializer = function.listaMenu()
-            return Response(status=status.HTTP_200_OK, data=serializer.data)
+
+            codigo_rol_seleccionado = request.GET.get("id")
+            if codigo_rol_seleccionado is not None or 0:
+                menu_opciones = MenuOpcion.objects.filter(estado="A")
+                data_response = []
+                for item_menu in menu_opciones:
+                    existe_menu = RolesMenu.objects.filter(
+                        Q(rol_id_id=codigo_rol_seleccionado) & Q(menu_id_id=item_menu.menu_id)).exists()
+                    item_response = {
+                        "seleccionado": int(existe_menu),
+                        "menu_id": item_menu.menu_id,
+                        "descripcion": item_menu.descripcion
+                    }
+                    data_response.append(item_response)
+
+            # serializer = function.listaMenu()
+            return Response(status=status.HTTP_200_OK, data=data_response)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST,
                             data={"estado": "error",

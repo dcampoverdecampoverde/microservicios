@@ -71,23 +71,22 @@ class FuncionesAdminApp():
 
     def registrarRolMenu(self, request_data):
 
+        # elimino los menus asignados al rol escogido
+        RolesMenu.objects.filter(rol_id_id=request_data["rol_id"]).delete()
+
         for item in request_data["listado_menu"]:
-            exists = RolesMenu.objects.filter(
-                Q(estado__contains="A") & Q(rol_id_id=request_data["rol_id"]) & Q(
-                    menu_id_id=item["menu_id"])).count()
-            if exists <= 0:
-                data_menu = {
-                    'estado': 'A',
-                    'rol_id': request_data["rol_id"],
-                    'rol_descripcion': request_data['rol_descripcion'],
-                    'menu_id': item["menu_id"],
-                    'menu_descripcion': item["menu_descripcion"],
-                    'usuario_creacion': request_data['usuario_id'],
-                    'ip_creacion': '0.0.0.0'
-                }
-                serializer = RolesMenuRegistroSerializer(data=data_menu)
-                if serializer.is_valid(raise_exception=True):
-                    serializer.save()
+            data_menu = {
+                'estado': 'A',
+                'rol_id': request_data["rol_id"],
+                'rol_descripcion': request_data['rol_descripcion'],
+                'menu_id': item["menu_id"],
+                'menu_descripcion': item["menu_descripcion"],
+                'usuario_creacion': request_data['usuario_id'],
+                'ip_creacion': '0.0.0.0'
+            }
+            serializer = RolesMenuRegistroSerializer(data=data_menu)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
 
         data_response = {
             "estado": 'ok',
