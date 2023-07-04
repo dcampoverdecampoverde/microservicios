@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.timezone import now
 
 from users_system.models import Usuario
 
@@ -18,7 +19,7 @@ class log_aprov_eir(models.Model):
     lista = models.CharField(max_length=50, null=True)  # que tipo de lista es, blanca, negra
     razon = models.CharField(max_length=1000, null=True)  # motivo por el cual fue enviado a lista negra
     origen = models.CharField(max_length=50, null=True)  # origen: si vino del front-end, proceso masivo
-    fecha_bitacora = models.DateTimeField(auto_now_add=True)
+    fecha_bitacora = models.DateTimeField(default=now)
     descripcion = models.CharField(max_length=500, null=True)
     usuario_id = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True)
     usuario_descripcion = models.CharField(max_length=50, null=True)
@@ -40,7 +41,7 @@ class files_process_bulk(models.Model):
     observacion = models.CharField(null=True, blank=True, max_length=100)
     fecha_archivo_procesando = models.DateTimeField(null=True, blank=True)
     fecha_archivo_finalizado = models.DateTimeField(null=True, blank=True)
-    fecha_registro = models.DateTimeField(auto_now_add=True)
+    fecha_registro = models.DateTimeField(default=now)
     usuario_registro = models.CharField(max_length=20)
     ip_registro = models.CharField(max_length=50)
     fecha_actualizacion = models.DateTimeField(null=True, blank=True)
