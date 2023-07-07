@@ -39,6 +39,8 @@ class ListaNegraEliminarSerializer(serializers.ModelSerializer):
 
 
 class ListaNegraSerializer(serializers.ModelSerializer):
+    register = serializers.DateTimeField(format='%d/%m/%Y %H:%M:%S')
+
     class Meta:
         model = black_imsi
         fields = [

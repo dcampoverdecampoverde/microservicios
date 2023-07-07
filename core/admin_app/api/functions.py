@@ -1,6 +1,7 @@
 from django.db.models import Q
 
 from admin_app.api.serializers import *
+from admin_app.functions.functionsAdmin import FunctionsAdminApp
 from users_system.models import Usuario
 
 
@@ -69,21 +70,31 @@ class FuncionesAdminApp():
 
         return data_response
 
-    def registrarRolMenu(self, request_data):
+    def registrarRolMenu(self, request_data, request):
+
+        metodos = FunctionsAdminApp()
+        # obtengo la info del usuario conectado
+        data_user = metodos.obtenerUsuarioSesionToken(request)
+
+        # obtengo la direccion ip remota
+        ip_transaccion = metodos.obtenerDireccionIpRemota(request)
 
         # elimino los menus asignados al rol escogido
         RolesMenu.objects.filter(rol_id_id=request_data["rol_id"]).delete()
 
         for item in request_data["listado_menu"]:
-            data_menu = {
-                'estado': 'A',
-                'rol_id': request_data["rol_id"],
-                'rol_descripcion': request_data['rol_descripcion'],
-                'menu_id': item["menu_id"],
-                'menu_descripcion': item["menu_descripcion"],
-                'usuario_creacion': request_data['usuario_id'],
-                'ip_creacion': '0.0.0.0'
-            }
+            obj_menu = MenuOpcion.objects.get(menu_id=item["menu_id"])
+            obj_rol = Roles.objects.get(rol_id=request_data["rol_id"])
+            if obj_menu is not None and obj_rol is not None:
+                data_menu = {
+                    'estado': 'A',
+                    'rol_id': request_data["rol_id"],
+                    'rol_descripcion': obj_rol.descripcion,
+                    'menu_id': item["menu_id"],
+                    'menu_descripcion': obj_menu.descripcion,
+                    'usuario_creacion': data_user["username"],
+                    'ip_creacion': ip_transaccion
+                }
             serializer = RolesMenuRegistroSerializer(data=data_menu)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()

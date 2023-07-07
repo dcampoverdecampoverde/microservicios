@@ -6,6 +6,7 @@ from rest_framework.viewsets import ViewSet
 
 from admin_app.api.functions import FuncionesAdminApp
 from admin_app.api.serializers import *
+from admin_app.functions.functionsAdmin import FunctionsAdminApp
 from admin_app.models import *
 
 
@@ -77,9 +78,13 @@ class RolesMenuUsuarioViewSet(ViewSet):
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
         function = FuncionesAdminApp()
+        metodos = FunctionsAdminApp()
         try:
+            # Obtengo la sesion del usuario conectado
+            data_user = metodos.obtenerUsuarioSesionToken(request)
+
             # buscando el rol del usuario
-            menu_opciones_usuario = function.consultaMenuOpciones(info["usuario_id"])
+            menu_opciones_usuario = function.consultaMenuOpciones(data_user["username"])
             return Response(status=status.HTTP_200_OK, data=menu_opciones_usuario)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -108,7 +113,7 @@ class RolesMenuViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
         try:
             function = FuncionesAdminApp()
-            data_response = function.registrarRolMenu(info)
+            data_response = function.registrarRolMenu(info, request)
             return Response(status=status.HTTP_200_OK, data=data_response)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST,

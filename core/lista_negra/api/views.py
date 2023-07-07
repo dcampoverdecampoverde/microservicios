@@ -465,7 +465,7 @@ class LogXIMSIViewSet(ViewSet):
                                       "mensaje": message_validator_request_onlynumber})
 
             serializer_log = LogSerializer(
-                log_aprov_eir.objects.filter(imsi=info['imsi']),
+                log_aprov_eir.objects.filter(imsi=info['imsi']).order_by('-fecha_bitacora'),
                 many=True)
             return Response(status=status.HTTP_200_OK, data=serializer_log.data)
         except Exception as e:
