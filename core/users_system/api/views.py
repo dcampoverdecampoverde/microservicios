@@ -8,7 +8,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from users_system.api.serializers import UsuarioRegistroSerializer, UsuarioSerializer
+from users_system.api.serializers import UsuarioRegistroSerializer, UsuarioSerializer, UsuarioActualizarSerializer
+from users_system.functions.functions_usuarios import FunctionsUsuario
 from users_system.models import Usuario
 
 
@@ -16,11 +17,18 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        metodos = FunctionsUsuario()
         try:
-            info = request.POST if request.POST else request.data if request.data else None
-            refresh_token = info['refresh_token']
-            token = RefreshToken(refresh_token)
+            # Obtengo la informacion del usaurio q inicio sesion
+            data_user = metodos.obtenerUsuarioSesionToken(request)
+
+            usuario_sesion = Usuario.objects.get(username=data_user["username"])
+            token = RefreshToken.for_user(usuario_sesion)
             token.blacklist()
+            # info = request.POST if request.POST else request.data if request.data else None
+            # refresh_token = info['refresh_token']
+            # token = RefreshToken(refresh_token)
+            # token.blacklist()
             return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data=str(e))
@@ -34,7 +42,7 @@ class RegistroUsuarioView(APIView):
             serializer = UsuarioRegistroSerializer(data=request.data)
             response = {
                 "estado": "ok",
-                "descripcion": "operacion correcta",
+                "mensaje": "operacion correcta",
             }
             if serializer.is_valid():
                 serializer.save()
@@ -44,9 +52,45 @@ class RegistroUsuarioView(APIView):
         except Exception as e:
             response = {
                 "estado": "error",
-                "descripcion": str(e),
+                "mensaje": str(e),
             }
             return Response(status=status.HTTP_400_BAD_REQUEST, data=response)
+
+
+class UsuarioActualizaView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        metodos = FunctionsUsuario()
+        try:
+            info = request.POST if request.POST else request.data if request.data else None
+
+            # Obtengo la informacion del usaurio q inicio sesion
+            data_user = metodos.obtenerUsuarioSesionToken(request)
+
+            # Obtengo la direccion IP remota
+            ip_transaccion = metodos.obtenerDireccionIpRemota(request)
+
+            obj_usuario = Usuario.objects.get(pk=info["id"])
+            data_modificar = {
+                'is_active': info['is_active'],
+                'rol_id': info['rol_id'],
+                'email': info['email'],
+                'rol_descripcion': info['rol_descripcion'],
+                'fecha_modificacion': datetime.datetime.now(),
+                'usuario_modificacion': data_user['username'],
+                'ip_modificacion': ip_transaccion
+
+            }
+            serializer = UsuarioActualizarSerializer(obj_usuario, data=data_modificar, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                return Response(status=status.HTTP_200_OK, data={'estado': 'ok', 'mensaje': 'operacion correcta'})
+            else:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={'estado': 'error', 'mensaje': serializer.errors})
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={'estado': 'error', 'mensaje': str(e)})
 
 
 class UsuarioView(APIView):
@@ -61,21 +105,21 @@ class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        metodos = FunctionsUsuario()
         info = request.POST if request.POST else request.data if request.data else None
         try:
+            # Obtengo la informacion del usaurio q inicio sesion
+            data_user = metodos.obtenerUsuarioSesionToken(request)
+
             # Aqui se obtiene la direccion remota
-            user_ip = request.META.get('HTTP_X_FORWARDED_FOR')
-            if user_ip:
-                ip_transaccion = user_ip.split(',')[0]
-            else:
-                ip_transaccion = request.META.get('REMOTE_ADDR')
+            ip_transaccion = metodos.obtenerDireccionIpRemota(request)
 
             object_user = Usuario.objects.get(usuario_id=info["user_id"])
             validacion_clave = password_validation.validate_password(info["nueva_clave"], object_user)
 
             if validacion_clave is None:
                 object_user.fecha_modificacion = datetime.datetime.now()
-                object_user.usuario_modificacion = info["usuario_transaccion"]
+                object_user.usuario_modificacion = data_user["username"]
                 object_user.ip_modificacion = ip_transaccion
                 object_user.set_password(info["nueva_clave"])
                 object_user.save()

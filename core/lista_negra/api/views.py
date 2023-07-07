@@ -25,7 +25,7 @@ class ListaNegraRegistroViewSet(ViewSet):
     @swagger_auto_schema(
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
-            required=['imsi', 'source', 'user_id'],
+            required=['imsi', 'source'],
             properties={
                 'imsi': openapi.Schema(type=openapi.TYPE_STRING,
                                        description="Codigo IMSI que se va registrar",
@@ -41,9 +41,7 @@ class ListaNegraRegistroViewSet(ViewSet):
                                          max_length=1000),
                 'source': openapi.Schema(type=openapi.TYPE_STRING,
                                          description="Origen de la transaccion, se reciben los siguientes valores: {'api','front','bulk'}",
-                                         max_length=10),
-                'user_id': openapi.Schema(type=openapi.TYPE_INTEGER,
-                                          description="Codigo de usuario que debe estar registrado en el sistema y con permisos para ingresar IMSI")
+                                         max_length=10)
                 # 'visit_at': openapi.Schema(type=openapi.TYPE_STRING,
                 #                           format=FORMAT_DATE)
             }
@@ -79,12 +77,16 @@ class ListaNegraRegistroViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
 
         try:
+
+            # Obtengo la sesion del usuario que esta conectado
+            data_user = metodos.obtenerUsuarioSesionToken(request)
+
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
 
             # Evaluando los parametros recibidos:
             estado_parametros = validator.validator_parameters(info,
-                                                               ['imsi', 'telco', 'reason', 'list', 'source', 'user_id'])
+                                                               ['imsi', 'telco', 'reason', 'list', 'source'])
 
             if estado_parametros == False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -130,7 +132,7 @@ class ListaNegraRegistroViewSet(ViewSet):
             if len(message_validator_length_imsi) > 0:
                 log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"], info["source"],
                                 "error: " + message_validator_length_imsi,
-                                info["user_id"], ip_transaccion)
+                                data_user["username"], ip_transaccion)
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error", "mensaje": message_validator_length_imsi})
 
@@ -140,7 +142,7 @@ class ListaNegraRegistroViewSet(ViewSet):
                 log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"],
                                 info["source"],
                                 "Ingreso Ok",
-                                info["user_id"],
+                                data_user["username"],
                                 ip_transaccion
                                 )
                 return Response(status=status.HTTP_200_OK, data={"estado": "ok", "mensaje": "operacion correcta"})
@@ -148,7 +150,7 @@ class ListaNegraRegistroViewSet(ViewSet):
                 log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"],
                                 info["source"],
                                 serializer.errors,
-                                info["user_id"],
+                                data_user["username"],
                                 ip_transaccion
                                 )
                 return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
@@ -171,17 +173,14 @@ class ListaNegraConsultaViewSet(ViewSet):
     @swagger_auto_schema(
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
-            required=['imsi', 'source', 'user_id'],
+            required=['imsi', 'source'],
             properties={
                 'imsi': openapi.Schema(type=openapi.TYPE_STRING,
                                        description="Codigo IMSI que se va registrar",
                                        max_length=15),
                 'source': openapi.Schema(type=openapi.TYPE_STRING,
                                          description="Se reciben los siguientes valores: {'api','front','bulk'}",
-                                         max_length=10),
-                'user_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                          description="Codigo de usuario que debe estar registrado en el sistema y con permisos para consultar IMSI",
-                                          max_length=50)
+                                         max_length=10)
                 # 'visit_at': openapi.Schema(type=openapi.TYPE_STRING,
                 #                           format=FORMAT_DATE)
             }
@@ -214,18 +213,21 @@ class ListaNegraConsultaViewSet(ViewSet):
     def create(self, request):
 
         log_imsi = RegistroLog()
+
         validator = ValidatorListaNegra()
         metodos = FunctionsListaNegra()
         info = request.POST if request.POST else request.data if request.data else None
 
         try:
 
+            # Obtengo la sesion del usuario que esta conectado
+            data_user = metodos.obtenerUsuarioSesionToken(request)
+
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
 
             # Evaluando los parametros recibidos:
-            estado_parametros = validator.validator_parameters(info,
-                                                               ['imsi', 'source', 'user_id'])
+            estado_parametros = validator.validator_parameters(info, ['imsi', 'source'])
 
             if estado_parametros == False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -251,7 +253,7 @@ class ListaNegraConsultaViewSet(ViewSet):
             if len(message_validator_length_imsi) > 0:
                 log_imsi.grabar('QUERY', info["imsi"], None, None, None, info["source"],
                                 "error: " + message_validator_length_imsi,
-                                info["user_id"], ip_transaccion)
+                                data_user["username"], ip_transaccion)
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error", "mensaje": message_validator_length_imsi})
 
@@ -266,7 +268,7 @@ class ListaNegraConsultaViewSet(ViewSet):
                 }
                 log_imsi.grabar('QUERY', info["imsi"], None, None, None, info["source"],
                                 "Consulta Ok",
-                                info["user_id"],
+                                data_user["username"],
                                 ip_transaccion
                                 )
                 return Response(status=status.HTTP_200_OK, data=data_response)
@@ -300,7 +302,7 @@ class ListaNegraEliminarViewSet(ViewSet):
     @swagger_auto_schema(
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
-            required=['imsi', 'source', 'reason', 'user_id'],
+            required=['imsi', 'source', 'reason'],
             properties={
                 'imsi': openapi.Schema(type=openapi.TYPE_STRING,
                                        description="Codigo IMSI que se va registrar",
@@ -310,10 +312,7 @@ class ListaNegraEliminarViewSet(ViewSet):
                                          max_length=10),
                 'reason': openapi.Schema(type=openapi.TYPE_STRING,
                                          description="Se indica el motivo por el caul se elimina el codigo IMSI",
-                                         max_length=10),
-                'user_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                          description="Codigo de usuario que debe estar registrado en el sistema y con permisos para eliminar IMSI",
-                                          max_length=50)
+                                         max_length=10)
                 # 'visit_at': openapi.Schema(type=openapi.TYPE_STRING,
                 #                           format=FORMAT_DATE)
             }
@@ -350,12 +349,15 @@ class ListaNegraEliminarViewSet(ViewSet):
 
         try:
 
+            # Obtengo la sesion del usuario que esta conectado
+            data_user = metodos.obtenerUsuarioSesionToken(request)
+
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
 
             # Evaluando los parametros recibidos:
             estado_parametros = validator.validator_parameters(info,
-                                                               ['imsi', 'source', 'reason', 'user_id'])
+                                                               ['imsi', 'source', 'reason'])
 
             if estado_parametros == False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -380,7 +382,7 @@ class ListaNegraEliminarViewSet(ViewSet):
             if len(message_validator_length_imsi) > 0:
                 log_imsi.grabar('DELETE', info["imsi"], None, None, None, info["source"],
                                 "error: " + message_validator_length_imsi,
-                                info["user_id"],
+                                data_user["username"],
                                 ip_transaccion
                                 )
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -400,7 +402,7 @@ class ListaNegraEliminarViewSet(ViewSet):
                 obj_listanegra.delete()
                 log_imsi.grabar('DELETE', info["imsi"], None, None, info["reason"], info["source"],
                                 "Eliminacion Ok",
-                                info["user_id"],
+                                data_user["username"],
                                 ip_transaccion
                                 )
                 data_response = {
@@ -424,13 +426,17 @@ class ListaNegraEliminarViewSet(ViewSet):
 class LogXUsuarioViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
-    def create(self, request):
+    def list(self, request):
         validator = ValidatorListaNegra()
+        metodos = FunctionsListaNegra()
         try:
-            info = request.POST if request.POST else request.data if request.data else None
+
+            # Obtengo la sesion del usuario que esta conectado
+            data_user = metodos.obtenerUsuarioSesionToken(request)
 
             serializer_log = LogSerializer(
-                log_aprov_eir.objects.filter(usuario_descripcion=info['usuario_id']).order_by('-fecha_bitacora')[0:100],
+                log_aprov_eir.objects.filter(usuario_descripcion=data_user['username']).order_by('-fecha_bitacora')[
+                0:100],
                 many=True)
             return Response(status=status.HTTP_200_OK, data=serializer_log.data)
         except Exception as e:
@@ -486,7 +492,7 @@ class ParametrosOperadoraView(ViewSet):
 class ParametrosRutaFtpView(ViewSet):
     permission_classes = [IsAuthenticated]
 
-    def list(self, reques):
+    def list(self, request):
         try:
             # Se hace una validacion de los parametros lista, operadora y origen
             # para verificar si se esta recibiendo los calores que corresponden
@@ -511,7 +517,7 @@ class ArchivoMasivoViewSet(ViewSet):
     def list(self, request):
         try:
             serializer = FileProcessSerializer(
-                files_process_bulk.objects.all(),
+                files_process_bulk.objects.all().order_by('-fecha_archivo_procesando'),
                 many=True)
             return Response(status=status.HTTP_200_OK, data=serializer.data)
         except Exception as e:
@@ -525,13 +531,16 @@ class ArchivoMasivoViewSet(ViewSet):
         metodos = FunctionsListaNegra()
         info = request.POST if request.POST else request.data if request.data else None
         try:
+            # Obtengo la sesion del usuario conectado
+            data_user = metodos.obtenerUsuarioSesionToken(request)
+
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
 
             data_request = {
                 'estado': 'pendiente',
                 'archivo_csv': info['nombre_archivo_csv'],
-                'usuario_registro': info['usuario_id'],
+                'usuario_registro': data_user['username'],
                 'ip_registro': ip_transaccion
             }
             serializer = FileProcessRegistroSerializer(data=data_request)
@@ -553,7 +562,13 @@ class ArchivoMasivoViewSet(ViewSet):
         metodos = FunctionsListaNegra()
         info = request.POST if request.POST else request.data if request.data else None
         try:
+            # Obtengo la sesion del usuario conectado
+            data_user = metodos.obtenerUsuarioSesionToken(request)
+
+            # aqui se obtiene la direccion IP remota
             info["ip_actualizacion"] = metodos.obtenerDireccionIpRemota(request)
+            info["usuario_actualizacion"] = data_user["username"]
+
             obj_fileprocessbulk = files_process_bulk.objects.get(pk=pk)
             serializer = FileProcessActualizarSerializer(obj_fileprocessbulk, data=info, partial=True)
             if serializer.is_valid(raise_exception=True):
@@ -589,7 +604,7 @@ class ReporteBloqueadoViewSet(ViewSet):
             writer = csv.writer(response, delimiter="|")
 
             writer.writerow(
-                ['accion', 'imsi', 'telco', 'list', 'reason', 'souce', 'datetime_operation', 'detail', 'user_id',
+                ['accion', 'imsi', 'telco', 'list', 'reason', 'source', 'datetime_operation', 'detail', 'user_id',
                  'source_ip'])
 
             for item in valores_data["lista_valores"]:
@@ -631,7 +646,7 @@ class ReporteDesbloqueadoViewSet(ViewSet):
             writer = csv.writer(response, delimiter="|")
 
             writer.writerow(
-                ['accion', 'imsi', 'telco', 'list', 'reason', 'souce', 'datetime_operation', 'detail', 'user_id',
+                ['accion', 'imsi', 'telco', 'list', 'reason', 'source', 'datetime_operation', 'detail', 'user_id',
                  'source_ip'])
 
             for item in valores_data["lista_valores"]:
@@ -681,7 +696,7 @@ class ReporteGeneralLogViewSet(ViewSet):
             writer = csv.writer(response, delimiter="|")
 
             writer.writerow(
-                ['accion', 'imsi', 'telco', 'list', 'reason', 'souce', 'datetime_operation', 'detail', 'user_id',
+                ['accion', 'imsi', 'telco', 'list', 'reason', 'source', 'datetime_operation', 'detail', 'user_id',
                  'source_ip'])
 
             for item in valores_data["lista_valores"]:

@@ -49,6 +49,8 @@ class ListaNegraSerializer(serializers.ModelSerializer):
 
 
 class LogSerializer(serializers.ModelSerializer):
+    fecha_bitacora = serializers.DateTimeField(format='%d/%m/%Y %H:%M:%S')
+
     class Meta:
         model = log_aprov_eir
         fields = [
@@ -66,6 +68,12 @@ class LogSerializer(serializers.ModelSerializer):
 
 
 class FileProcessSerializer(serializers.ModelSerializer):
+    # Con esto se le da formato a los campos que son DateTimeField
+    fecha_archivo_procesando = serializers.DateTimeField(format='%d/%m/%Y %H:%M:%S')
+    fecha_archivo_finalizado = serializers.DateTimeField(format='%d/%m/%Y %H:%M:%S')
+    fecha_actualizacion = serializers.DateTimeField(format='%d/%m/%Y %H:%M:%S')
+    fecha_registro = serializers.DateTimeField(format='%d/%m/%Y %H:%M:%S')
+
     class Meta:
         model = files_process_bulk
         fields = [

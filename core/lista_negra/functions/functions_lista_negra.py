@@ -3,11 +3,26 @@ import json
 
 from django.apps import apps
 from django.db.models import Q
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from lista_negra.api.serializers import LogSerializer
 from lista_negra.models import *
 
 
 class FunctionsListaNegra():
+
+    def obtenerUsuarioSesionToken(self, request):
+        JWT_authenticator = JWTAuthentication()
+        response = JWT_authenticator.authenticate(request)
+        user, token = response
+        usuario_descripcion = user.username
+        usuario_id = token.payload["user_id"]
+        data_response = {
+            'username': usuario_descripcion,
+            'id': usuario_id
+        }
+        return data_response
+
     def obtenerDireccionIpRemota(self, request):
         user_ip = request.META.get('HTTP_X_FORWARDED_FOR')
         if user_ip:
@@ -18,26 +33,27 @@ class FunctionsListaNegra():
         return ip_transaccion
 
     def generarReporteDesbloqueados(self, data_request):
-        listado_log_bloqueados = log_aprov_eir.objects.filter(
+        serializer_log = LogSerializer(log_aprov_eir.objects.filter(
             Q(fecha_bitacora__date__range=[data_request["fecha_inicio"], data_request["fecha_fin"]])
             &
-            Q(accion="DELETE")
-        )
+            Q(accion="DELETE"),
+        ).order_by('-fecha_bitacora'), many=True)
+        data_log = serializer_log.data
         lista_reporte = []
-        for item_log in listado_log_bloqueados:
-            imsi_encontrado = black_imsi.objects.filter(imsi=item_log.imsi)
+        for item_log in data_log:
+            imsi_encontrado = black_imsi.objects.filter(imsi=item_log['imsi'])
             if len(imsi_encontrado) == 0:
                 item_reporte = {
-                    "accion": item_log.accion,
-                    "imsi": item_log.imsi,
-                    "operadora": item_log.operadora,
-                    "lista": item_log.lista,
-                    "razon": item_log.razon,
-                    "origen": item_log.origen,
-                    "fecha_bitacora": item_log.fecha_bitacora.strftime("%d/%m/%Y %H:%M:%S"),
-                    "descripcion": item_log.descripcion,
-                    "usuario_descripcion": item_log.usuario_descripcion,
-                    "ip_transaccion": item_log.ip_transaccion
+                    "accion": item_log['accion'],
+                    "imsi": item_log['imsi'],
+                    "operadora": item_log['operadora'],
+                    "lista": item_log['lista'],
+                    "razon": item_log['razon'],
+                    "origen": item_log['origen'],
+                    "fecha_bitacora": item_log['fecha_bitacora'],
+                    "descripcion": item_log['descripcion'],
+                    "usuario_descripcion": item_log['usuario_descripcion'],
+                    "ip_transaccion": item_log['ip_transaccion']
                 }
                 lista_reporte.append(item_reporte)
 
@@ -63,26 +79,29 @@ class FunctionsListaNegra():
         return data_response
 
     def generarReporteBloqueados(self, data_request):
-        listado_log_bloqueados = log_aprov_eir.objects.filter(
+        serializer_log = LogSerializer(log_aprov_eir.objects.filter(
             Q(fecha_bitacora__date__range=[data_request["fecha_inicio"], data_request["fecha_fin"]])
             &
             Q(accion="INSERT")
-        )
+            &
+            Q(descripcion="Ingreso Ok")
+        ).order_by('-fecha_bitacora'), many=True)
+        data_log = serializer_log.data
         lista_reporte = []
-        for item_log in listado_log_bloqueados:
-            imsi_encontrado = black_imsi.objects.filter(imsi=item_log.imsi)
+        for item_log in data_log:
+            imsi_encontrado = black_imsi.objects.filter(imsi=item_log['imsi'])
             if len(imsi_encontrado) == 1:
                 item_reporte = {
-                    "accion": item_log.accion,
-                    "imsi": item_log.imsi,
-                    "operadora": item_log.operadora,
-                    "lista": item_log.lista,
-                    "razon": item_log.razon,
-                    "origen": item_log.origen,
-                    "fecha_bitacora": item_log.fecha_bitacora.strftime("%d/%m/%Y %H:%M:%S"),
-                    "descripcion": item_log.descripcion,
-                    "usuario_descripcion": item_log.usuario_descripcion,
-                    "ip_transaccion": item_log.ip_transaccion
+                    "accion": item_log['accion'],
+                    "imsi": item_log['imsi'],
+                    "operadora": item_log['operadora'],
+                    "lista": item_log['lista'],
+                    "razon": item_log['razon'],
+                    "origen": item_log['origen'],
+                    "fecha_bitacora": item_log['fecha_bitacora'],
+                    "descripcion": item_log['descripcion'],
+                    "usuario_descripcion": item_log['usuario_descripcion'],
+                    "ip_transaccion": item_log['ip_transaccion']
                 }
                 lista_reporte.append(item_reporte)
 
@@ -108,21 +127,23 @@ class FunctionsListaNegra():
         return data_response
 
     def generarReporteGeneralLog(self, data_request):
-        listado_log_bloqueados = log_aprov_eir.objects.filter(
-            Q(fecha_bitacora__date__range=[data_request["fecha_inicio"], data_request["fecha_fin"]]))
+        serializer_log = LogSerializer(log_aprov_eir.objects.filter(
+            Q(fecha_bitacora__date__range=[data_request["fecha_inicio"], data_request["fecha_fin"]])).order_by(
+            '-fecha_bitacora'), many=True)
+        data_log = serializer_log.data
         lista_reporte = []
-        for item_log in listado_log_bloqueados:
+        for item_log in data_log:
             item_reporte = {
-                "accion": item_log.accion,
-                "imsi": item_log.imsi,
-                "operadora": item_log.operadora,
-                "lista": item_log.lista,
-                "razon": item_log.razon,
-                "origen": item_log.origen,
-                "fecha_bitacora": item_log.fecha_bitacora.strftime("%d/%m/%Y %H:%M:%S"),
-                "descripcion": item_log.descripcion,
-                "usuario_descripcion": item_log.usuario_descripcion,
-                "ip_transaccion": item_log.ip_transaccion
+                "accion": item_log['accion'],
+                "imsi": item_log['imsi'],
+                "operadora": item_log['operadora'],
+                "lista": item_log['lista'],
+                "razon": item_log['razon'],
+                "origen": item_log['origen'],
+                "fecha_bitacora": item_log['fecha_bitacora'],
+                "descripcion": item_log['descripcion'],
+                "usuario_descripcion": item_log['usuario_descripcion'],
+                "ip_transaccion": item_log['ip_transaccion']
             }
             lista_reporte.append(item_reporte)
 
