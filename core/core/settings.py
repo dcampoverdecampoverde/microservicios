@@ -127,6 +127,7 @@ USE_TZ = True
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
@@ -139,7 +140,8 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     'USER_ID_FIELD': 'usuario_id',
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60)
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    'AUTH_HEADER_TYPES': ('Bearer',)
 }
 
 # Static files (CSS, JavaScript, Images)
@@ -157,3 +159,13 @@ CORS_ALLOW_CREDENTIALS = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users_system.Usuario'
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'token_access': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization'
+        }
+    },
+}

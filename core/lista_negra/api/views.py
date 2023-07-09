@@ -23,12 +23,14 @@ class ListaNegraRegistroViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
+        operation_description='API para registrar un IMSI en lista negra',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             required=['imsi', 'source'],
             properties={
-                'imsi': openapi.Schema(type=openapi.TYPE_STRING,
+                'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
                                        description="Codigo IMSI que se va registrar",
+                                       example=123456789012345,
                                        max_length=15),
                 'telco': openapi.Schema(type=openapi.TYPE_STRING,
                                         description="Se reciben valores {'claro','telefonica','cnt','otros','masivo' }",
@@ -171,12 +173,14 @@ class ListaNegraConsultaViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
+        operation_description='API para consultar IMSI registrado en lista negra',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             required=['imsi', 'source'],
             properties={
-                'imsi': openapi.Schema(type=openapi.TYPE_STRING,
+                'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
                                        description="Codigo IMSI que se va registrar",
+                                       example=123456789012345,
                                        max_length=15),
                 'source': openapi.Schema(type=openapi.TYPE_STRING,
                                          description="Se reciben los siguientes valores: {'api','front','bulk'}",
@@ -288,6 +292,41 @@ class ListaNegraConsultaViewSet(ViewSet):
         except Exception as e1:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e1)})
 
+    @swagger_auto_schema(
+        operation_description='API para obtener todos los registros de Lista Negra',
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                     properties={
+                                         'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                description='Codigo IMSI'),
+                                         'source': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                  description='Origen donde fueron registrados',
+                                                                  ),
+                                         'register': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                                                    description='Fecha que se ingreso',
+                                                                    ),
+
+                                     }
+                                     )
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def list(self, request):
         try:
             serializer_data_imsi = ListaNegraSerializer(black_imsi.objects.all(), many=True)
@@ -300,12 +339,14 @@ class ListaNegraEliminarViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
+        operation_description='API para eliminar IMSI registrado en lista negra',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             required=['imsi', 'source', 'reason'],
             properties={
-                'imsi': openapi.Schema(type=openapi.TYPE_STRING,
+                'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
                                        description="Codigo IMSI que se va registrar",
+                                       example=123456789012345,
                                        max_length=15),
                 'source': openapi.Schema(type=openapi.TYPE_STRING,
                                          description="Se reciben los siguientes valores: {'api','front','bulk'}",
@@ -426,6 +467,58 @@ class ListaNegraEliminarViewSet(ViewSet):
 class LogXUsuarioViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description='API para consulta de los primeros 100 LOGS mas recientes realizados por la sesion del usuario conectado',
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                     properties={
+                                         'accion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                  description='Accion realizada sobre el codigo IMSI',
+                                                                  example="INSERT"),
+                                         'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                description='Codigo IMSI', example=123456789012345),
+                                         'operadora': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                     description='Operador telefonico',
+                                                                     example='claro'),
+                                         'lista': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                 description='Tipo lista',
+                                                                 example='negra'),
+                                         'razon': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                 description='Motivo de la transaccion sobre el codigo IMSI registrado',
+                                                                 example='Fue bloqueado'),
+                                         'origen': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                  description='Origen de la transaccion',
+                                                                  example='api'),
+                                         'fecha_bitacora': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                                                          description='Fecha transaccion',
+                                                                          ),
+                                         'usuario_descripcion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                               description='Usuario que realizo transaccion con el codigo IMSI',
+                                                                               ),
+                                         'ip_transaccion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                          description='Direccion IP de donde se realizo la transaccion',
+                                                                          ),
+                                     }
+                                     )
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def list(self, request):
         validator = ValidatorListaNegra()
         metodos = FunctionsListaNegra()
@@ -446,6 +539,68 @@ class LogXUsuarioViewSet(ViewSet):
 class LogXIMSIViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description='API para consulta de todos los LOGS de un codigo IMSI ingresado',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['imsi'],
+            properties={
+                'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                       description="Codigo IMSI que se va registrar",
+                                       example=123456789012345,
+                                       max_length=15),
+            }
+        ),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                     properties={
+                                         'accion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                  description='Accion realizada sobre el codigo IMSI',
+                                                                  example="INSERT"),
+                                         'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                description='Codigo IMSI', example=123456789012345),
+                                         'operadora': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                     description='Operador telefonico',
+                                                                     example='claro'),
+                                         'lista': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                 description='Tipo lista',
+                                                                 example='negra'),
+                                         'razon': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                 description='Motivo de la transaccion sobre el codigo IMSI registrado',
+                                                                 example='Fue bloqueado'),
+                                         'origen': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                  description='Origen de la transaccion',
+                                                                  example='api'),
+                                         'fecha_bitacora': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                                                          description='Fecha transaccion',
+                                                                          ),
+                                         'usuario_descripcion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                               description='Usuario que realizo transaccion con el codigo IMSI',
+                                                                               ),
+                                         'ip_transaccion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                          description='Direccion IP de donde se realizo la transaccion',
+                                                                          ),
+                                     }
+                                     )
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def create(self, request):
         validator = ValidatorListaNegra()
         try:
@@ -475,6 +630,35 @@ class LogXIMSIViewSet(ViewSet):
 class ParametrosOperadoraView(ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description='API para obtener el listado de valores de Operadora',
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                     properties={
+                                         'valor': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                 description='Valor de operadora',
+                                                                 example="claro"),
+                                     }
+                                     )
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def list(self, reques):
         try:
             # Se hace una validacion de los parametros lista, operadora y origen
@@ -492,15 +676,44 @@ class ParametrosOperadoraView(ViewSet):
 class ParametrosRutaFtpView(ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description='API para obtener la ruta FTP configurada en el archivo config.json',
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                     properties={
+                                         'valor': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                 description='Valor de operadora',
+                                                                 example="claro"),
+                                     }
+                                     )
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def list(self, request):
         try:
             # Se hace una validacion de los parametros lista, operadora y origen
             # para verificar si se esta recibiendo los calores que corresponden
             # segun lo definido en el config.json
             # Windows
-            # config = open(r'C:/Users/dcamp/OneDrive/Documentos/Proyecto_CLARO/Aplicativo/Job_Masivo/config.json')
+            config = open(r'C:/Users/dcamp/OneDrive/Documentos/Proyecto_CLARO/Aplicativo/Job_Masivo/config.json')
             # Linux
-            config = open(r'/var/www/html/jobs/config.json')
+            # config = open(r'/var/www/html/jobs/config.json')
             data = json.load(config)
             data_response = {
                 "estado": "ok",
@@ -514,6 +727,77 @@ class ParametrosRutaFtpView(ViewSet):
 class ArchivoMasivoViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description='API para obtener el listado de archivos masivos registrados desde UI',
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                     properties={
+                                         'id': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                              description='ID de la tabla',
+                                                              ),
+                                         'estado': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                  description='Estado del registro',
+                                                                  ),
+                                         'archivo_csv': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                       description='Nombre archivo CSV registrado',
+                                                                       ),
+                                         'total_encontrado': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                            description='Total IMSI encontrados en el archivo csv a procesar',
+                                                                            ),
+                                         'total_error': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                       description='Total de IMSI encontrados con error',
+                                                                       ),
+                                         'total_ok': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                    description='Total de IMSI procesados correctamente a lista negra',
+                                                                    ),
+                                         'observacion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                       description='Detalle de alguna observacion para el caso que el archivo csv no fue encontrado',
+                                                                       example="claro"),
+                                         'fecha_archivo_procesando': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                                    description='Fecha desde que inicio el proceso de ingreso a lista negra',
+                                                                                    ),
+                                         'fecha_archivo_finalizado': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                                    description='Fecha de fin de operacion de ingreso de IMSI a lista negra',
+                                                                                    ),
+                                         'fecha_registro': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                          description='Fecha que se ingreso la transaccion',
+                                                                          example="claro"),
+                                         'usuario_registro': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                            description='Usuario que realizo la operacion de ingreso de archivos masivos',
+                                                                            example="claro"),
+                                         'ip_registro': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                       description='Direccion IP de donde se esta consumiento el Api',
+                                                                       ),
+                                         'fecha_actualizacion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                               description='Fecha de actualizacion del registro',
+                                                                               ),
+                                         'usuario_actualizacion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                                 description='Usuario que realizo alguna modificacion sobre los registros',
+                                                                                 ),
+                                         'ip_actualizacion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                            description='Direccion IP de donde se esta consumiento el Api',
+                                                                            )
+                                     }
+                                     )
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def list(self, request):
         try:
             serializer = FileProcessSerializer(
@@ -527,6 +811,44 @@ class ArchivoMasivoViewSet(ViewSet):
             }
             return Response(status=status.HTTP_400_BAD_REQUEST, data=data_response)
 
+    @swagger_auto_schema(
+        operation_description='API para registrar un IMSI masivo a Lista Negra',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['nombre_archivo_csv'],
+            properties={
+                'nombre_archivo_csv': openapi.Schema(type=openapi.TYPE_STRING,
+                                                     description="Nombre archivo csv que se va a procesar",
+                                                     example='mi_archivo.csv',
+                                                     max_length=50),
+                # 'visit_at': openapi.Schema(type=openapi.TYPE_STRING,
+                #                           format=FORMAT_DATE)
+            }
+        ),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def create(self, request):
         metodos = FunctionsListaNegra()
         info = request.POST if request.POST else request.data if request.data else None
@@ -587,6 +909,42 @@ class ArchivoMasivoViewSet(ViewSet):
 class ReporteBloqueadoViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description='API para generar archivo CSV de todos los IMSI bloqueados',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['fecha_inicio', 'fecha_fin'],
+            properties={
+                'fecha_inicio': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                               description="Fecha desde a buscar en la tabla de lista negra",
+                                               ),
+                'fecha_fin': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                            description="Fecha fin a buscar en la tabla de lista negra",
+                                            ),
+            }
+        ),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_FILE,
+                content_type='text/csv',
+                content_disposition='attachment; filename="blocked.csv"'
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
         try:
@@ -629,6 +987,42 @@ class ReporteBloqueadoViewSet(ViewSet):
 class ReporteDesbloqueadoViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description='API para generar archivo CSV de todos los IMSI desbloqueados',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['fecha_inicio', 'fecha_fin'],
+            properties={
+                'fecha_inicio': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                               description="Fecha desde a buscar en la tabla de lista negra",
+                                               ),
+                'fecha_fin': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                            description="Fecha fin a buscar en la tabla de lista negra",
+                                            ),
+            }
+        ),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_FILE,
+                content_type='text/csv',
+                content_disposition='attachment; filename="unblocked.csv"'
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
         try:
@@ -671,6 +1065,33 @@ class ReporteDesbloqueadoViewSet(ViewSet):
 class ReporteGeneralLogViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description='API para generar un Sumario General Resumido',
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING, description='estado de la transaccion'),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING,
+                                              description='data con el sumario general resumido')
+                }
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def list(self, request):
         funcion = FunctionsListaNegra()
         try:
@@ -679,6 +1100,42 @@ class ReporteGeneralLogViewSet(ViewSet):
         except Exception as e:
             return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_description='API para generar archivo CSV de todos los LOG de los IMSI ingresados, consultados y eliminados',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['fecha_inicio', 'fecha_fin'],
+            properties={
+                'fecha_inicio': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                               description="Fecha desde a buscar en la tabla de logs",
+                                               ),
+                'fecha_fin': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                            description="Fecha fin a buscar en la tabla de logs",
+                                            ),
+            }
+        ),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_FILE,
+                content_type='text/csv',
+                content_disposition='attachment; filename="logs.csv"'
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
         try:
@@ -721,6 +1178,42 @@ class ReporteGeneralLogViewSet(ViewSet):
 class ReporteSumarioDetalladoView(ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description='API para generar archivo CSV um sumario detallado de todos los IMSI registrados',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['fecha_inicio', 'fecha_fin'],
+            properties={
+                'fecha_inicio': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                               description="Fecha desde a buscar en la tabla de logs",
+                                               ),
+                'fecha_fin': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                            description="Fecha fin a buscar en la tabla de logs",
+                                            ),
+            }
+        ),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_FILE,
+                content_type='text/csv',
+                content_disposition='attachment; filename="summary.csv"'
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
         try:
