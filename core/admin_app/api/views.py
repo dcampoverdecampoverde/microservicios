@@ -1,4 +1,6 @@
 from django.db.models import Q
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -15,6 +17,38 @@ from admin_app.models import *
 class RolesViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description='API que consulta tabla maestra de Roles',
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                     properties={
+                                         'rol_id': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                  description='Identificador del Rol'),
+                                         'estado': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                  description='Estado del Rol'),
+                                         'descripcion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                       description='Descripcion del Rol'),
+                                     }
+                                     )
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def list(self, request):
         try:
             function = FuncionesAdminApp()
@@ -29,6 +63,38 @@ class RolesViewSet(ViewSet):
 class MenuOpcionViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description='API que consulta tabla maestra de Menu',
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                     properties={
+                                         'seleccionado': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                        description='Muestra si se encuentra asignago al un Rol Determinado'),
+                                         'menu_id': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                   description='Identificador del Menu'),
+                                         'descripcion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                       description='Descripcion del Menu'),
+                                     }
+                                     )
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def list(self, request):
         function = FuncionesAdminApp()
         try:
@@ -58,6 +124,38 @@ class MenuOpcionViewSet(ViewSet):
 class AccionesViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description='API que consulta tabla maestra de Acciones',
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                     properties={
+                                         'accion_id': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                     description='Identificador de accion'),
+                                         'estado': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                  description='Estado de la accion'),
+                                         'descripcion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                       description='Descripcion de la accion'),
+                                     }
+                                     )
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def list(self, request):
         try:
             function = FuncionesAdminApp()
@@ -75,6 +173,36 @@ class AccionesViewSet(ViewSet):
 class RolesMenuUsuarioViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description='API que muestra el menu de opciones asignado segun su rol configurado',
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                     properties={
+                                         'descripcion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                       description='Descripcion del menu opcion'),
+                                         'url_page': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                    description='Url de acceso al menu'),
+                                     }
+                                     )
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
         function = FuncionesAdminApp()
@@ -95,6 +223,36 @@ class RolesMenuUsuarioViewSet(ViewSet):
 class RolesMenuViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description='API que consulta la cantidad de menu asignados por el Rol de Usuario',
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                     properties={
+                                         'rol': openapi.Schema(type=openapi.TYPE_STRING,
+                                                               description='Descripcion del Rol'),
+                                         'total_menu_asignados': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                                description='Cantidad de menu asignados'),
+                                     }
+                                     )
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def list(self, request):
         try:
             function = FuncionesAdminApp()
@@ -108,7 +266,43 @@ class RolesMenuViewSet(ViewSet):
     # def retrieve(self, request, roles_id):
     #    pass
 
-    # @extend_schema(responses=RolesMenuRegistroSerializer)
+    @swagger_auto_schema(
+        operation_description='API que permite asignar menu de opciones a un rol seleccionado',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_ARRAY,
+            items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                 properties={
+                                     'listado_menu': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                    description='Lista de los ID del menu opciones que se van a asignar'),
+                                     'rol_id': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                              description='ID del rol seleccionado'),
+                                 }
+                                 )
+        ),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
         try:
