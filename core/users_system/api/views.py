@@ -154,6 +154,29 @@ class ChangePasswordView(APIView):
             return Response(data=data_response, status=status.HTTP_400_BAD_REQUEST)
 
 
+class ValidarUsuarioBaseReplicaView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        metodos = FunctionsUsuario()
+        # Obtengo la informacion del usaurio q inicio sesion
+        data_user = metodos.obtenerUsuarioSesionToken(request)
+        usuario_id_master = data_user["id"]
+        usuario_id_replica = metodos.obtenerIDUsuarioBaseReplica(data_user["username"])
+        if usuario_id_master == usuario_id_replica:
+            data_response = {
+                "estado": "ok",
+                "mensaje": "ok"
+            }
+            return Response(data=data_response, status=status.HTTP_200_OK)
+        else:
+            data_response = {
+                "estado": "error",
+                "mensaje": "el ID de usuario no coincide entre la base master y replica. Por favor verifique"
+            }
+            return Response(data=data_response, status=status.HTTP_400_BAD_REQUEST)
+
+
 class ValidarSessionView(APIView):
     permission_classes = [IsAuthenticated]
 

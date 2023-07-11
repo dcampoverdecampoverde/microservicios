@@ -141,6 +141,15 @@ class ListaNegraRegistroViewSet(ViewSet):
             serializer = ListaNegraRegistroSerializer(data=info)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
+
+                """
+                Aqui se va a ingresar el nuevo IMSI en la base REPLIC                
+                """
+                black_imsi.objects.using('replica').create(
+                    imsi=info['imsi'],
+                    source=info['source']
+                )
+
                 log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"],
                                 info["source"],
                                 "Ingreso Ok",
@@ -441,6 +450,13 @@ class ListaNegraEliminarViewSet(ViewSet):
             if value_validator_exists_imsi:
                 obj_listanegra = black_imsi.objects.get(pk=info["imsi"])
                 obj_listanegra.delete()
+                """
+                Aqui se elimina el registro que se encuentra en la base REPLICA
+                
+                """
+                obj_listanegra_replica = black_imsi.objects.using('replica').get(pk=info["imsi"])
+                obj_listanegra_replica.delete()
+
                 log_imsi.grabar('DELETE', info["imsi"], None, None, info["reason"], info["source"],
                                 "Eliminacion Ok",
                                 data_user["username"],
@@ -707,17 +723,18 @@ class ParametrosRutaFtpView(ViewSet):
     )
     def list(self, request):
         try:
-            # Se hace una validacion de los parametros lista, operadora y origen
-            # para verificar si se esta recibiendo los calores que corresponden
-            # segun lo definido en el config.json
-            # Windows
-            config = open(r'C:/Users/dcamp/OneDrive/Documentos/Proyecto_CLARO/Aplicativo/Job_Masivo/config.json')
-            # Linux
-            # config = open(r'/var/www/html/jobs/config.json')
+            path = apps.get_app_config('lista_negra').path
+            config = open(path + r'/config/config.json')
             data = json.load(config)
+            ruta_config_jobmasivo = data["ruta_ftp_job_masivo"]
+            # Una vez obtenida la lectura
+            config_job = open(fr'{data["ruta_ftp_job_masivo"]}')
+            data_job = json.load(config_job)
+
+            data_response = data
             data_response = {
                 "estado": "ok",
-                "mensaje": data["PATH_FTP_CSV"]
+                "mensaje": data_job["PATH_FTP_CSV"]
             }
             return Response(status=status.HTTP_200_OK, data=data_response)
         except Exception as e:

@@ -44,5 +44,6 @@
       "valor": "masivo"
     }
   ],
-  "ruta_reportes": "c:/temp/report_csv_files/"
+  "ruta_reportes": "c:/temp/report_csv_files/",
+  "ruta_ftp_job_masivo": "C:/Users/dcamp/OneDrive/Documentos/Proyecto_CLARO/Aplicativo/Job_Masivo/config.json"
 }

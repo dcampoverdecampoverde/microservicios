@@ -1,5 +1,7 @@
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from users_system.models import Usuario
+
 
 class FunctionsUsuario():
     def obtenerUsuarioSesionToken(self, request):
@@ -13,6 +15,16 @@ class FunctionsUsuario():
             'id': usuario_id
         }
         return data_response
+
+    def obtenerIDUsuarioBaseReplica(self, usuario_sesion):
+        usuario_id = 0
+        try:
+            obj_usuario = Usuario.objects.using('replica').filter(username=usuario_sesion).first()
+            if obj_usuario is not None:
+                usuario_id = obj_usuario.usuario_id
+        except Exception as e:
+            usuario_id = 0
+        return usuario_id
 
     def obtenerDireccionIpRemota(self, request):
         user_ip = request.META.get('HTTP_X_FORWARDED_FOR')

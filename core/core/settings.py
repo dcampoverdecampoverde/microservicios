@@ -91,7 +91,19 @@ DATABASES = {
         'HOST': '192.168.1.15',
         'PORT': '5432',
         'CONN_MAX_AGE': None
-    }
+    },
+    'replica': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'eirdb',
+        'OPTIONS': {
+            'options': '-c search_path=eir_catalog'
+        },
+        'USER': 'postgres',
+        'PASSWORD': 'password',
+        'HOST': '54.221.127.164',
+        'PORT': '5432',
+        'CONN_MAX_AGE': None
+    },
 }
 
 # Password validation
