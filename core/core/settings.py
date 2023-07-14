@@ -100,7 +100,7 @@ DATABASES = {
         },
         'USER': 'postgres',
         'PASSWORD': 'password',
-        'HOST': '54.221.127.164',
+        'HOST': 'localhost',
         'PORT': '5432',
         'CONN_MAX_AGE': None
     },

@@ -132,9 +132,9 @@ class ListaNegraRegistroViewSet(ViewSet):
             # Evaluando longitud del codigo IMSI
             message_validator_length_imsi = validator.validator_length_imsi(info['imsi'])
             if len(message_validator_length_imsi) > 0:
-                log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"], info["source"],
-                                "error: " + message_validator_length_imsi,
-                                data_user["username"], ip_transaccion)
+                # log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"], info["source"],
+                #                "error: " + message_validator_length_imsi,
+                #                data_user["username"], ip_transaccion)
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error", "mensaje": message_validator_length_imsi})
 
@@ -264,9 +264,9 @@ class ListaNegraConsultaViewSet(ViewSet):
             # Validando longitud IMSI
             message_validator_length_imsi = validator.validator_length_imsi(info['imsi'])
             if len(message_validator_length_imsi) > 0:
-                log_imsi.grabar('QUERY', info["imsi"], None, None, None, info["source"],
-                                "error: " + message_validator_length_imsi,
-                                data_user["username"], ip_transaccion)
+                # log_imsi.grabar('QUERY', info["imsi"], None, None, None, info["source"],
+                #                "error: " + message_validator_length_imsi,
+                #                data_user["username"], ip_transaccion)
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error", "mensaje": message_validator_length_imsi})
 
@@ -430,11 +430,11 @@ class ListaNegraEliminarViewSet(ViewSet):
             # Evaluando longitud del codigo IMSI
             message_validator_length_imsi = validator.validator_length_imsi(info['imsi'])
             if len(message_validator_length_imsi) > 0:
-                log_imsi.grabar('DELETE', info["imsi"], None, None, None, info["source"],
-                                "error: " + message_validator_length_imsi,
-                                data_user["username"],
-                                ip_transaccion
-                                )
+                # log_imsi.grabar('DELETE', info["imsi"], None, None, None, info["source"],
+                #                "error: " + message_validator_length_imsi,
+                #                data_user["username"],
+                #                ip_transaccion
+                #               )
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error", "mensaje": message_validator_length_imsi})
 
