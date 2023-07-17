@@ -4,7 +4,7 @@ from users_system.models import Usuario
 
 class RegistroLog():
     def grabar(self, accion, codigo_imsi, operadora, lista, razon, origen, descripcion, usuario_id,
-               ip_usuario_transaccion):
+               ip_usuario_transaccion, log_file):
         log_aprov_eir.objects.create(
             estado="A",
             accion=accion,
@@ -22,16 +22,19 @@ class RegistroLog():
         # Aqui se crea el registro de REPLICA
 
         # listado_imsi = black_imsi.objects.using('replica').all()
-        log_aprov_eir.objects.using('replica').create(
-            estado="A",
-            accion=accion,
-            imsi=codigo_imsi,
-            operadora=operadora,
-            lista=lista,
-            razon=razon,
-            origen=origen,
-            descripcion=descripcion,
-            usuario_id_id=Usuario.objects.get(username=usuario_id).usuario_id,
-            ip_transaccion=ip_usuario_transaccion,
-            usuario_descripcion=usuario_id
-        )
+        try:
+            log_aprov_eir.objects.using('replica').create(
+                estado="A",
+                accion=accion,
+                imsi=codigo_imsi,
+                operadora=operadora,
+                lista=lista,
+                razon=razon,
+                origen=origen,
+                descripcion=descripcion,
+                usuario_id_id=Usuario.objects.get(username=usuario_id).usuario_id,
+                ip_transaccion=ip_usuario_transaccion,
+                usuario_descripcion=usuario_id
+            )
+        except Exception as e:
+            log_file.error(f"Fallo la insercion LOGS con la base Replica: {str(e)}")

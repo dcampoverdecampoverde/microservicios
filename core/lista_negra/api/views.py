@@ -1,5 +1,6 @@
 import csv
 import json
+import logging as log
 
 from django.apps import apps
 from django.db import DatabaseError
@@ -17,6 +18,13 @@ from lista_negra.functions.functions_lista_negra import FunctionsListaNegra
 from lista_negra.functions.functions_log import RegistroLog
 from lista_negra.models import *
 from lista_negra.validators.validator_lista_negra import ValidatorListaNegra
+
+log.basicConfig(level=log.DEBUG,
+                format='%(asctime)s: %(levelname)s [%(filename)s:%(lineno)s] %(message)s',
+                handlers=[
+                    log.FileHandler(apps.get_app_config('lista_negra').path + r'/logs/log_api_lista_negra.log'),
+                    log.StreamHandler()
+                ])
 
 
 class ListaNegraRegistroViewSet(ViewSet):
@@ -79,6 +87,8 @@ class ListaNegraRegistroViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
 
         try:
+            # registrando en log el request enviando
+            log.info(f"request registro_imsi: {str(info)}")
 
             # Obtengo la sesion del usuario que esta conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
@@ -145,16 +155,19 @@ class ListaNegraRegistroViewSet(ViewSet):
                 """
                 Aqui se va a ingresar el nuevo IMSI en la base REPLIC                
                 """
-                black_imsi.objects.using('replica').create(
-                    imsi=info['imsi'],
-                    source=info['source']
-                )
+                try:
+                    black_imsi.objects.using('replica').create(
+                        imsi=info['imsi'],
+                        source=info['source']
+                    )
+                except Exception as e1:
+                    log.error(f"Fallo la insercion IMSI con la base Replica: {str(e1)}")
 
                 log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"],
                                 info["source"],
                                 "Ingreso Ok",
                                 data_user["username"],
-                                ip_transaccion
+                                ip_transaccion, log
                                 )
                 return Response(status=status.HTTP_200_OK, data={"estado": "ok", "mensaje": "operacion correcta"})
             else:
@@ -233,6 +246,9 @@ class ListaNegraConsultaViewSet(ViewSet):
 
         try:
 
+            # registrando en log el request enviando
+            log.info(f"request consulta_imsi: {str(info)}")
+
             # Obtengo la sesion del usuario que esta conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
 
@@ -282,7 +298,7 @@ class ListaNegraConsultaViewSet(ViewSet):
                 log_imsi.grabar('QUERY', info["imsi"], None, None, None, info["source"],
                                 "Consulta Ok",
                                 data_user["username"],
-                                ip_transaccion
+                                ip_transaccion, log
                                 )
                 return Response(status=status.HTTP_200_OK, data=data_response)
             else:
@@ -399,6 +415,9 @@ class ListaNegraEliminarViewSet(ViewSet):
 
         try:
 
+            # registrando en log el request enviando
+            log.info(f"request eliminar_imsi: {str(info)}")
+
             # Obtengo la sesion del usuario que esta conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
 
@@ -454,8 +473,11 @@ class ListaNegraEliminarViewSet(ViewSet):
                 Aqui se elimina el registro que se encuentra en la base REPLICA
                 
                 """
-                obj_listanegra_replica = black_imsi.objects.using('replica').get(pk=info["imsi"])
-                obj_listanegra_replica.delete()
+                try:
+                    obj_listanegra_replica = black_imsi.objects.using('replica').get(pk=info["imsi"])
+                    obj_listanegra_replica.delete()
+                except Exception as e:
+                    log.error(f"Fallo la eliminacion IMSI en la base Replica: {str(e)}")
 
                 log_imsi.grabar('DELETE', info["imsi"], None, None, info["reason"], info["source"],
                                 "Eliminacion Ok",
@@ -675,7 +697,7 @@ class ParametrosOperadoraView(ViewSet):
             )
         }
     )
-    def list(self, reques):
+    def list(self, request):
         try:
             # Se hace una validacion de los parametros lista, operadora y origen
             # para verificar si se esta recibiendo los calores que corresponden
@@ -870,6 +892,9 @@ class ArchivoMasivoViewSet(ViewSet):
         metodos = FunctionsListaNegra()
         info = request.POST if request.POST else request.data if request.data else None
         try:
+            # registrando en log el request enviando
+            log.info(f"request registro_imsi_masivo: {str(info)}")
+
             # Obtengo la sesion del usuario conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
 
@@ -901,6 +926,9 @@ class ArchivoMasivoViewSet(ViewSet):
         metodos = FunctionsListaNegra()
         info = request.POST if request.POST else request.data if request.data else None
         try:
+            # registrando en log el request enviando
+            log.info(f"request actualizacion_imsi_masivo: {str(info)}")
+
             # Obtengo la sesion del usuario conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
 
@@ -1236,6 +1264,12 @@ class ReporteSumarioDetalladoView(ViewSet):
         try:
             funcion = FunctionsListaNegra()
             valores_data = funcion.generarSumarioDetallado(info)
+
+            # ordenamiento
+            valores_data.sort(key=lambda x: x.get('imsi'), reverse=True)
+            valores_data.sort(key=lambda x: x.get('total_insert'), reverse=True)
+            valores_data.sort(key=lambda x: x.get('total_query'), reverse=True)
+            valores_data.sort(key=lambda x: x.get('total_delete'), reverse=True)
 
             response = HttpResponse(
                 content_type='text/csv',

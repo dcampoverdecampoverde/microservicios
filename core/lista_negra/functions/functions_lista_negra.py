@@ -169,7 +169,7 @@ class FunctionsListaNegra():
         return data_response
 
     def generarSumario(self):
-        lista_imsi = black_imsi.objects.all()
+        # lista_imsi = black_imsi.objects.all()
         # ahora se busca en logs, todos los insert y q existan en la tabla
         # lista_logs = log_aprov_eir.objects.all()
         contador_bloqueados = 0
@@ -181,7 +181,7 @@ class FunctionsListaNegra():
         #         contador_bloqueados = contador_bloqueados + 1
         #     if lista_logs.filter(imsi=item.imsi).exists() and item.accion == "DELETE":
         #         contador_desbloqueados = contador_desbloqueados + 1
-        total_bloqueados = log_aprov_eir.objects.filter(Q(accion="INSERT") & Q(descripcion="Ingreso Ok")).count()
+        total_bloqueados = black_imsi.objects.all().count()
         total_desbloqueados = log_aprov_eir.objects.filter(accion="DELETE").count()
         total = total_bloqueados + total_desbloqueados
         data_response = {
@@ -195,18 +195,17 @@ class FunctionsListaNegra():
         lista_resultados = []
 
         lista_log = log_aprov_eir.objects.filter(
-            Q(fecha_bitacora__date__range=[data_request['fecha_inicio'], data_request['fecha_fin']]))
+            Q(fecha_bitacora__date__range=[data_request['fecha_inicio'], data_request['fecha_fin']])).distinct('imsi')
         for item_log in lista_log:
             total_insert = 0
             total_query = 0
             total_delete = 0
-            if item_log.accion == 'INSERT' and item_log.descripcion == 'Ingreso Ok':
-                total_insert = log_aprov_eir.objects.filter(
-                    Q(imsi=item_log.imsi) & Q(accion='INSERT') & Q(descripcion='Ingreso Ok')).count()
-            if item_log.accion == 'QUERY':
-                total_query = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='QUERY')).count()
-            if item_log.accion == 'DELETE':
-                total_delete = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='DELETE')).count()
+            total_insert = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='INSERT') & Q(
+                fecha_bitacora__date__range=[data_request['fecha_inicio'], data_request['fecha_fin']])).count()
+            total_query = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='QUERY') & Q(
+                fecha_bitacora__date__range=[data_request['fecha_inicio'], data_request['fecha_fin']])).count()
+            total_delete = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='DELETE') & Q(
+                fecha_bitacora__date__range=[data_request['fecha_inicio'], data_request['fecha_fin']])).count()
             data_resultados = {
                 'imsi': item_log.imsi,
                 'total_insert': total_insert,
