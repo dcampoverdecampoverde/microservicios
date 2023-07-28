@@ -326,12 +326,12 @@ class ListaNegraConsultaViewSet(ViewSet):
                                      properties={
                                          'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
                                                                 description='Codigo IMSI'),
-                                         'source': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                  description='Origen donde fueron registrados',
-                                                                  ),
-                                         'register': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
-                                                                    description='Fecha que se ingreso',
-                                                                    ),
+                                         'fecha': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                 description='Fecha cuando registrado el codigo IMSI',
+                                                                 ),
+                                         'usuario': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                                                   description='Usuario que registro el ingreso del codigo IMSI',
+                                                                   ),
 
                                      }
                                      )
@@ -353,9 +353,11 @@ class ListaNegraConsultaViewSet(ViewSet):
         }
     )
     def list(self, request):
+        metodos = FunctionsListaNegra()
         try:
-            serializer_data_imsi = ListaNegraSerializer(black_imsi.objects.all(), many=True)
-            return Response(status=status.HTTP_200_OK, data=serializer_data_imsi.data)
+            # serializer_data_imsi = ListaNegraSerializer(black_imsi.objects.all(), many=True)
+            data_lista_negra = metodos.generarListaNegraTotal()
+            return Response(status=status.HTTP_200_OK, data=data_lista_negra)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
 

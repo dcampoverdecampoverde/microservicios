@@ -191,6 +191,23 @@ class FunctionsListaNegra():
         }
         return data_response
 
+    def generarListaNegraTotal(self):
+        logs = log_aprov_eir.objects.filter(
+            Q(accion='INSERT')).distinct('imsi')
+
+        data_response = []
+        for item_log in logs:
+            if black_imsi.objects.filter(imsi=item_log.imsi).exists():
+                data_log = log_aprov_eir.objects.get(imsi=item_log.imsi)
+                data = {
+                    'imsi': data_log.imsi,
+                    'fecha': data_log.fecha_bitacora.strftime("%d/%m/%Y %H:%M:%S"),
+                    'usuario': data_log.usuario_descripcion
+                }
+                data_response.append(data)
+
+        return data_response
+
     def generarSumarioDetallado(self, data_request):
         lista_resultados = []
 
