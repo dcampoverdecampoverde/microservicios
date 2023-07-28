@@ -175,7 +175,7 @@ class ListaNegraRegistroViewSet(ViewSet):
                                 info["source"],
                                 serializer.errors,
                                 data_user["username"],
-                                ip_transaccion
+                                ip_transaccion, log
                                 )
                 return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
         except DatabaseError as e:
@@ -482,7 +482,7 @@ class ListaNegraEliminarViewSet(ViewSet):
                 log_imsi.grabar('DELETE', info["imsi"], None, None, info["reason"], info["source"],
                                 "Eliminacion Ok",
                                 data_user["username"],
-                                ip_transaccion
+                                ip_transaccion, log
                                 )
                 data_response = {
                     "estado": "ok",
