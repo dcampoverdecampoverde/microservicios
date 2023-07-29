@@ -124,3 +124,21 @@ class FileProcessActualizarSerializer(serializers.ModelSerializer):
             'usuario_actualizacion',
             'ip_actualizacion',
         ]
+
+
+class TdrSerializer(serializers.ModelSerializer):
+    fecha = serializers.DateField(format='%d/%m/%Y')
+    hora = serializers.TimeField(format='%H:%M:%S')
+
+    class Meta:
+        model = imei_imsi_block
+        fields = [
+            'id',
+            'fecha',
+            'hora',
+            'central',
+            'imei',
+            'imsi',
+            'codigo1',
+            'codigo2'
+        ]

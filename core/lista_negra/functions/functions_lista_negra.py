@@ -1,11 +1,12 @@
 import datetime
 import json
+from datetime import datetime
 
 from django.apps import apps
 from django.db.models import Q
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from lista_negra.api.serializers import LogSerializer
+from lista_negra.api.serializers import LogSerializer, TdrSerializer
 from lista_negra.models import *
 
 
@@ -232,3 +233,28 @@ class FunctionsListaNegra():
             lista_resultados.append(data_resultados)
 
         return lista_resultados
+
+    def consultarTdr(self, codigo_imsi, codigo_imei, fecha_desde, fecha_hasta):
+        serializer_tdr = None
+        try:
+
+            conditions = []
+            condicion_fecha = ('fecha', 'range', [fecha_desde, fecha_hasta])
+            conditions.append(condicion_fecha)
+            if len(codigo_imsi.strip()) != 0:
+                conditions.append(('imsi', 'iexact', codigo_imsi))
+
+            if len(codigo_imei.strip()) != 0:
+                conditions.append(('imei', 'iexact', codigo_imei))
+
+            filters = dict(map(self.get_filter, conditions))
+            serializer_tdr = TdrSerializer(imei_imsi_block.objects.filter(**filters), many=True)
+
+            return {"estado": "ok", "mensaje": serializer_tdr.data}
+        except Exception as e:
+            return {"estado": "error", "mensaje": str(e)}
+
+    def get_filter(self, values):
+        name, condition, value = values
+        key = f"{name}__{condition}"
+        return key, value

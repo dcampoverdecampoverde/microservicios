@@ -47,3 +47,19 @@ class files_process_bulk(models.Model):
     fecha_actualizacion = models.DateTimeField(null=True, blank=True)
     usuario_actualizacion = models.CharField(max_length=50, blank=True, null=True)
     ip_actualizacion = models.CharField(max_length=50, blank=True, null=True)
+
+
+class imei_imsi_block(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    fecha = models.DateField(blank=True, null=True)
+    hora = models.TimeField(blank=True, null=True)
+    central = models.CharField(max_length=100)
+    imei = models.BigIntegerField(null=True, blank=True)
+    imsi = models.BigIntegerField(null=True, blank=True)
+    codigo1 = models.CharField(max_length=100)
+    codigo2 = models.CharField(max_length=100)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['imei', 'imsi']),
+        ]

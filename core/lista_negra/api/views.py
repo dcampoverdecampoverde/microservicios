@@ -1294,3 +1294,71 @@ class ReporteSumarioDetalladoView(ViewSet):
             # return Response(data={"estado": "ok", "mensaje": nombre_csv_creado}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ConsultarTDRViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        info = request.POST if request.POST else request.data if request.data else None
+        # obtengo los parametros enviados en el request:
+        codigo_imsi = info['imsi']
+        codigo_imei = info['imei']
+        fecha_desde = info['fecha_desde']
+        fecha_hasta = info['fecha_hasta']
+
+        if len(fecha_desde.strip()) == 0 or len(fecha_hasta.strip()) == 0:
+            return Response(data='Los campos de fecha son obligatorios', status=status.HTTP_400_BAD_REQUEST)
+
+        funcion = FunctionsListaNegra()
+        data_response = funcion.consultarTdr(codigo_imsi, codigo_imei, fecha_desde, fecha_hasta)
+        if data_response["estado"] == "ok":
+            return Response(data=data_response, status=status.HTTP_200_OK)
+        else:
+            return Response(data=data_response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReporteTDRViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        info = request.POST if request.POST else request.data if request.data else None
+        try:
+            codigo_imsi = info['imsi']
+            codigo_imei = info['imei']
+            fecha_desde = info['fecha_desde']
+            fecha_hasta = info['fecha_hasta']
+
+            if len(fecha_desde.strip()) == 0 or len(fecha_hasta.strip()) == 0:
+                return Response(data='Los campos de fecha son obligatorios', status=status.HTTP_400_BAD_REQUEST)
+
+            funcion = FunctionsListaNegra()
+            data_response = funcion.consultarTdr(codigo_imsi, codigo_imei, fecha_desde, fecha_hasta)
+            if data_response["estado"] == "ok":
+
+                response = HttpResponse(
+                    content_type='text/csv',
+                )
+                response['Content-Disposition'] = 'attachment; filename="myfile.csv"'
+
+                writer = csv.writer(response, delimiter="|")
+
+                writer.writerow(
+                    ['id', 'fecha', 'hora', 'central', 'imei', 'imsi', 'codigo1', 'codigo2'])
+
+                for item in data_response['mensaje']:
+                    writer.writerow([
+                        item["id"],
+                        item["fecha"],
+                        item["hora"],
+                        item["central"],
+                        item["imei"],
+                        item["imsi"],
+                        item["codigo1"],
+                        item["codigo2"]
+                    ])
+                return response
+            else:
+                return Response(data=data_response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)

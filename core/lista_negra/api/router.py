@@ -27,3 +27,7 @@ router_default_LN.register(prefix='reporte_logs', basename='reporte_logs',
                            viewset=ReporteGeneralLogViewSet)
 router_default_LN.register(prefix='reporte_summary', basename='reporte_summary',
                            viewset=ReporteSumarioDetalladoView)
+router_default_LN.register(prefix='consulta_tdr', basename='consultar_tdr',
+                           viewset=ConsultarTDRViewSet)
+router_default_LN.register(prefix='reporte_tdr', basename='reporte_tdr',
+                           viewset=ReporteTDRViewSet)
