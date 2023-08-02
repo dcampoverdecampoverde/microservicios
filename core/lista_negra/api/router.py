@@ -31,3 +31,5 @@ router_default_LN.register(prefix='consulta_tdr', basename='consultar_tdr',
                            viewset=ConsultarTDRViewSet)
 router_default_LN.register(prefix='reporte_tdr', basename='reporte_tdr',
                            viewset=ReporteTDRViewSet)
+router_default_LN.register(prefix='consulta_todo_desbloqueados', basename='consulta_todo_desbloqueados',
+                           viewset=ConsultarDesBloquedosViewSet)

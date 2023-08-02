@@ -1,8 +1,3 @@
-import datetime
-import json
-from datetime import datetime
-
-from django.apps import apps
 from django.db.models import Q
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -60,22 +55,12 @@ class FunctionsListaNegra():
 
         # keys = lista_reporte[0].keys()
 
-        path = apps.get_app_config('lista_negra').path
-        config = open(path + r'/config/config.json')
-        data_config = json.load(config)
-
-        nombre_archivo_csv = "report_unblocked_" + datetime.datetime.now().strftime(
-            "%Y%m%d%H%M%S") + ".csv"
-        # dict_writer = None
-        # with open(data_config["ruta_reportes"] + nombre_archivo_csv, 'w', newline='') as output_file:
-        #    dict_writer = csv.DictWriter(output_file, keys, delimiter="|")
-        #    dict_writer.writeheader()
-        #    dict_writer.writerows(lista_reporte)
+        nombre_archivo_csv = "report_unblocked.csv"
 
         data_response = {
             "lista_valores": lista_reporte,
             "nombre_archivo": nombre_archivo_csv,
-            "ruta_reporte": data_config["ruta_reportes"]
+            "ruta_reporte": ""
         }
         return data_response
 
@@ -106,14 +91,7 @@ class FunctionsListaNegra():
                 }
                 lista_reporte.append(item_reporte)
 
-        # keys = lista_reporte[0].keys()
-
-        path = apps.get_app_config('lista_negra').path
-        config = open(path + r'/config/config.json')
-        data_config = json.load(config)
-
-        nombre_archivo_csv = "report_blocked_" + datetime.datetime.now().strftime(
-            "%Y%m%d%H%M%S") + ".csv"
+        nombre_archivo_csv = "report_blocked.csv"
         # dict_writer = None
         # with open(data_config["ruta_reportes"] + nombre_archivo_csv, 'w', newline='') as output_file:
         #    dict_writer = csv.DictWriter(output_file, keys, delimiter="|")
@@ -123,7 +101,7 @@ class FunctionsListaNegra():
         data_response = {
             "lista_valores": lista_reporte,
             "nombre_archivo": nombre_archivo_csv,
-            "ruta_reporte": data_config["ruta_reportes"]
+            "ruta_reporte": ""
         }
         return data_response
 
@@ -150,12 +128,7 @@ class FunctionsListaNegra():
 
         # keys = lista_reporte[0].keys()
 
-        path = apps.get_app_config('lista_negra').path
-        config = open(path + r'/config/config.json')
-        data_config = json.load(config)
-
-        nombre_archivo_csv = "report_log_blocked_" + datetime.datetime.now().strftime(
-            "%Y%m%d%H%M%S") + ".csv"
+        nombre_archivo_csv = "report_log_blocked.csv"
         # dict_writer = None
         # with open(data_config["ruta_reportes"] + nombre_archivo_csv, 'w', newline='') as output_file:
         #    dict_writer = csv.DictWriter(output_file, keys, delimiter="|")
@@ -165,7 +138,7 @@ class FunctionsListaNegra():
         data_response = {
             "lista_valores": lista_reporte,
             "nombre_archivo": nombre_archivo_csv,
-            "ruta_reporte": data_config["ruta_reportes"]
+            "ruta_reporte": ""
         }
         return data_response
 
@@ -199,14 +172,34 @@ class FunctionsListaNegra():
         data_response = []
         for item_log in logs:
             if black_imsi.objects.filter(imsi=item_log.imsi).exists():
-                data_log = log_aprov_eir.objects.get(imsi=item_log.imsi)
-                data = {
-                    'imsi': data_log.imsi,
-                    'fecha': data_log.fecha_bitacora.strftime("%d/%m/%Y %H:%M:%S"),
-                    'usuario': data_log.usuario_descripcion
-                }
+                serializer_log = LogSerializer(
+                    log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='INSERT')), many=True)
+                data_log = serializer_log.data
+                for item_serializer in data_log:
+                    data = {
+                        'imsi': item_serializer['imsi'],
+                        'fecha': item_serializer['fecha_bitacora'],  # .strftime("%d/%m/%Y %H:%M:%S"),
+                        'usuario': item_serializer['usuario_descripcion']
+                    }
                 data_response.append(data)
 
+        return data_response
+
+    def generarListaNegraDesbloqueadosTotal(self):
+        logs = log_aprov_eir.objects.filter(Q(accion='DELETE')).distinct('imsi')
+        data_response = []
+        for item_log in logs:
+            if not black_imsi.objects.filter(imsi=item_log.imsi).exists():
+                serializer_log = LogSerializer(
+                    log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='DELETE')), many=True)
+                data_log = serializer_log.data
+                for item_serializer in data_log:
+                    data = {
+                        'imsi': item_serializer['imsi'],
+                        'fecha': item_serializer['fecha_bitacora'],  # .strftime("%d/%m/%Y %H:%M:%S"),
+                        'usuario': item_serializer['usuario_descripcion']
+                    }
+                data_response.append(data)
         return data_response
 
     def generarSumarioDetallado(self, data_request):

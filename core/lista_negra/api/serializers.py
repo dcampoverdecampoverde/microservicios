@@ -140,5 +140,6 @@ class TdrSerializer(serializers.ModelSerializer):
             'imei',
             'imsi',
             'codigo1',
-            'codigo2'
+            'codigo2',
+            'tecnologia'
         ]

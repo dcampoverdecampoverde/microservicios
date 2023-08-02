@@ -997,7 +997,7 @@ class ReporteBloqueadoViewSet(ViewSet):
         try:
             funcion = FunctionsListaNegra()
             valores_data = funcion.generarReporteBloqueados(info)
-            ruta_archivo = valores_data["ruta_reporte"] + valores_data["nombre_archivo"]
+
             # file_download = open(ruta_archivo, 'r')
             # response = HttpResponse(file_download, content_type='text/csv')
             # response['Content-Disposition'] = 'attachment; filename="{}"'.format(valores_data["nombre_archivo"])
@@ -1075,7 +1075,7 @@ class ReporteDesbloqueadoViewSet(ViewSet):
         try:
             funcion = FunctionsListaNegra()
             valores_data = funcion.generarReporteDesbloqueados(info)
-            ruta_archivo = valores_data["ruta_reporte"] + valores_data["nombre_archivo"]
+            
             # file_download = open(ruta_archivo, 'r')
             # response = HttpResponse(file_download, content_type='text/csv')
             # response['Content-Disposition'] = 'attachment; filename="{}"'.format(valores_data["nombre_archivo"])
@@ -1188,10 +1188,6 @@ class ReporteGeneralLogViewSet(ViewSet):
         try:
             funcion = FunctionsListaNegra()
             valores_data = funcion.generarReporteGeneralLog(info)
-            ruta_archivo = valores_data["ruta_reporte"] + valores_data["nombre_archivo"]
-            # file_download = open(ruta_archivo, 'r')
-            # response = HttpResponse(file_download, content_type='text/csv')
-            # response['Content-Disposition'] = 'attachment; filename="{}"'.format(valores_data["nombre_archivo"])
             response = HttpResponse(
                 content_type='text/csv',
             )
@@ -1344,7 +1340,7 @@ class ReporteTDRViewSet(ViewSet):
                 writer = csv.writer(response, delimiter="|")
 
                 writer.writerow(
-                    ['id', 'fecha', 'hora', 'central', 'imei', 'imsi', 'codigo1', 'codigo2'])
+                    ['id', 'fecha', 'hora', 'central', 'imei', 'imsi', 'codigo1', 'codigo2', 'tecnologia'])
 
                 for item in data_response['mensaje']:
                     writer.writerow([
@@ -1355,10 +1351,23 @@ class ReporteTDRViewSet(ViewSet):
                         item["imei"],
                         item["imsi"],
                         item["codigo1"],
-                        item["codigo2"]
+                        item["codigo2"],
+                        item["tecnologia"]
                     ])
                 return response
             else:
                 return Response(data=data_response, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ConsultarDesBloquedosViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        funcion = FunctionsListaNegra()
+        try:
+            data_response = funcion.generarListaNegraDesbloqueadosTotal()
+            return Response(data=data_response, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)

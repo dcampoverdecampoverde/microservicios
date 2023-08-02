@@ -58,6 +58,7 @@ class imei_imsi_block(models.Model):
     imsi = models.BigIntegerField(null=True, blank=True)
     codigo1 = models.CharField(max_length=100)
     codigo2 = models.CharField(max_length=100)
+    tecnologia = models.CharField(max_length=10, null=True, blank=True)
 
     class Meta:
         indexes = [
