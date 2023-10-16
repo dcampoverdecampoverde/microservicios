@@ -1,10 +1,7 @@
 import csv
-import json
 import logging as log
 
-from django.apps import apps
 from django.db import DatabaseError
-from django.db.models import Q
 from django.http import HttpResponse
 from drf_yasg import openapi
 from drf_yasg.openapi import FORMAT_DATE
@@ -14,11 +11,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
-from lista_negra.api.serializers import *
-from lista_negra.functions.functions_lista_negra import FunctionsListaNegra
-from lista_negra.functions.functions_log import RegistroLog
-from lista_negra.models import *
-from lista_negra.validators.validator_lista_negra import ValidatorListaNegra
+from imei.api.serializers import *
+from imei.functions.function_listanegra_imei import FunctionsListaNegraImei
+from imei.registro_log import RegistroLog
+from imei.validators.imei_request_validator import *
 
 log.basicConfig(level=log.DEBUG,
                 format='%(asctime)s: %(levelname)s [%(filename)s:%(lineno)s] %(message)s',
@@ -28,17 +24,17 @@ log.basicConfig(level=log.DEBUG,
                 ])
 
 
-class ListaNegraRegistroViewSet(ViewSet):
+class ImeiBlackRegistroViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        operation_description='API para registrar un IMSI en lista negra',
+        operation_description='API para registrar un IMEI en lista negra',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
-            required=['imsi', 'source'],
+            required=['imei'],
             properties={
-                'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
-                                       description="Codigo IMSI que se va registrar",
+                'imei': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                       description="Codigo IMEI que se va registrar",
                                        example=123456789012345,
                                        max_length=15),
                 'telco': openapi.Schema(type=openapi.TYPE_STRING,
@@ -48,7 +44,7 @@ class ListaNegraRegistroViewSet(ViewSet):
                                        description="Se reciben valores {'blanca','gris','negra'}",
                                        max_length=10),
                 'reason': openapi.Schema(type=openapi.TYPE_STRING,
-                                         description="Descripcion cual fue el motivo del bloqueo del codigo IMSI",
+                                         description="Descripcion cual fue el motivo del bloqueo del codigo IMEI",
                                          max_length=1000),
                 'source': openapi.Schema(type=openapi.TYPE_STRING,
                                          description="Origen de la transaccion, se reciben los siguientes valores: {'api','front','bulk'}",
@@ -82,14 +78,14 @@ class ListaNegraRegistroViewSet(ViewSet):
         }
     )
     def create(self, request):
-        log_imsi = RegistroLog()
-        validator = ValidatorListaNegra()
-        metodos = FunctionsListaNegra()
+        log_imei = RegistroLog()
+        validator = ImeiRequestValidator()
+        metodos = FunctionsListaNegraImei()
         info = request.POST if request.POST else request.data if request.data else None
 
         try:
             # registrando en log el request enviando
-            log.info(f"request registro_imsi: {str(info)}")
+            log.info(f"request registro_imei: {str(info)}")
 
             # Obtengo la sesion del usuario que esta conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
@@ -97,51 +93,58 @@ class ListaNegraRegistroViewSet(ViewSet):
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
 
+            """
             # Evaluando los parametros recibidos:
             estado_parametros = validator.validator_parameters(info,
-                                                               ['imsi', 'telco', 'reason', 'list', 'source'])
+                                                               ['imei', 'telco', 'reason', 'list', 'source'])
 
             if estado_parametros == False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error",
                                       "mensaje": "no se reconoce uno de los parametros enviados en la trama. Por favor revise la documentacion"})
+            """
 
             # Evaluando que el valor reason tenga un valor
+            """
             if len(info["reason"].strip()) <= 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error",
                                       "mensaje": "falta ingresar un motivo"})
+            """
 
             # Evaluando Operadora
+            """
             message_validator_request_operadora = validator.validator_parameter_operadora(info['telco'])
             if len(message_validator_request_operadora) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error",
                                       "mensaje": message_validator_request_operadora})
-
+            """
             # Evaluando Origen
+            """
             message_validator_request_origen = validator.validator_parameter_origen(info['source'])
             if len(message_validator_request_origen) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error",
                                       "mensaje": message_validator_request_origen})
-
+            """
             # Evaluando Lista
+            """
             message_validator_request_lista = validator.validator_parameter_lista(info['list'])
             if len(message_validator_request_lista) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error",
                                       "mensaje": message_validator_request_lista})
-
+            """
             # Evaluando que el codigo IMSI sea solo numeros
-            message_validator_request_onlynumber = validator.validator_onlynumber_imsi(info['imsi'])
+            message_validator_request_onlynumber = validator.validator_onlynumber_imei(info['imei'])
             if len(message_validator_request_onlynumber) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error",
                                       "mensaje": message_validator_request_onlynumber})
 
             # Evaluando longitud del codigo IMSI
-            message_validator_length_imsi = validator.validator_length_imsi(info['imsi'])
+            message_validator_length_imsi = validator.validator_length_imei(info['imei'])
             if len(message_validator_length_imsi) > 0:
                 # log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"], info["source"],
                 #                "error: " + message_validator_length_imsi,
@@ -149,22 +152,11 @@ class ListaNegraRegistroViewSet(ViewSet):
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error", "mensaje": message_validator_length_imsi})
 
-            serializer = ListaNegraRegistroSerializer(data=info)
+            serializer = ImeiRegistroSerializer(data=info)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
 
-                """
-                Aqui se va a ingresar el nuevo IMSI en la base REPLIC                
-                """
-                try:
-                    black_imsi.objects.using('replica').create(
-                        imsi=info['imsi'],
-                        source=info['source']
-                    )
-                except Exception as e1:
-                    log.error(f"Fallo la insercion IMSI con la base Replica: {str(e1)}")
-
-                log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"],
+                log_imei.grabar('INSERT', info["imei"], info["telco"], info["list"], info["reason"],
                                 info["source"],
                                 "Ingreso Ok",
                                 data_user["username"],
@@ -172,7 +164,7 @@ class ListaNegraRegistroViewSet(ViewSet):
                                 )
                 return Response(status=status.HTTP_200_OK, data={"estado": "ok", "mensaje": "operacion correcta"})
             else:
-                log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"],
+                log_imei.grabar('INSERT', info["imei"], info["telco"], info["list"], info["reason"],
                                 info["source"],
                                 serializer.errors,
                                 data_user["username"],
@@ -189,20 +181,18 @@ class ListaNegraRegistroViewSet(ViewSet):
 
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e1)})
 
-    # def destroy(self, request, *args, **kwargs):
 
-
-class ListaNegraConsultaViewSet(ViewSet):
+class ImeiBlackConsultaViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        operation_description='API para consultar IMSI registrado en lista negra',
+        operation_description='API para consultar IMEI registrado en lista negra',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
-            required=['imsi', 'source'],
+            required=['imei', 'source'],
             properties={
                 'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
-                                       description="Codigo IMSI que se va registrar",
+                                       description="Codigo IMEI que se va registrar",
                                        example=123456789012345,
                                        max_length=15),
                 'source': openapi.Schema(type=openapi.TYPE_STRING,
@@ -216,7 +206,7 @@ class ListaNegraConsultaViewSet(ViewSet):
             200: openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
-                    'imsi': openapi.Schema(type=openapi.TYPE_STRING),
+                    'imei': openapi.Schema(type=openapi.TYPE_STRING),
                     'source': openapi.Schema(type=openapi.TYPE_STRING),
                     'register': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE)
                 }
@@ -239,16 +229,15 @@ class ListaNegraConsultaViewSet(ViewSet):
     )
     def create(self, request):
 
-        log_imsi = RegistroLog()
-
-        validator = ValidatorListaNegra()
-        metodos = FunctionsListaNegra()
+        log_imei = RegistroLog()
+        validator = ImeiRequestValidator()
+        metodos = FunctionsListaNegraImei()
         info = request.POST if request.POST else request.data if request.data else None
 
         try:
 
             # registrando en log el request enviando
-            log.info(f"request consulta_imsi: {str(info)}")
+            log.info(f"request consulta_imei: {str(info)}")
 
             # Obtengo la sesion del usuario que esta conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
@@ -257,7 +246,7 @@ class ListaNegraConsultaViewSet(ViewSet):
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
 
             # Evaluando los parametros recibidos:
-            estado_parametros = validator.validator_parameters(info, ['imsi', 'source'])
+            estado_parametros = validator.validator_parameters(info, ['imei', 'source'])
 
             if estado_parametros == False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -265,7 +254,7 @@ class ListaNegraConsultaViewSet(ViewSet):
                                       "mensaje": "no se reconoce uno de los parametros enviados en la trama. Por favor revise la documentacion"})
 
             # Evaluando que el codigo IMSI sea solo numeros
-            message_validator_request_onlynumber = validator.validator_onlynumber_imsi(info['imsi'])
+            message_validator_request_onlynumber = validator.validator_onlynumber_imei(info['imei'])
             if len(message_validator_request_onlynumber) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error",
@@ -279,7 +268,7 @@ class ListaNegraConsultaViewSet(ViewSet):
                                       "mensaje": message_validator_request_origen})
 
             # Validando longitud IMSI
-            message_validator_length_imsi = validator.validator_length_imsi(info['imsi'])
+            message_validator_length_imsi = validator.validator_length_imei(info['imei'])
             if len(message_validator_length_imsi) > 0:
                 # log_imsi.grabar('QUERY', info["imsi"], None, None, None, info["source"],
                 #                "error: " + message_validator_length_imsi,
@@ -288,15 +277,16 @@ class ListaNegraConsultaViewSet(ViewSet):
                                 data={"estado": "error", "mensaje": message_validator_length_imsi})
 
             # Validando si existe o no el IMSI
-            value_validator_exists_imsi = validator.validator_exists_imsi(info['imsi'])
-            if value_validator_exists_imsi:
-                serializer_data_imsi = ListaNegraSerializer(black_imsi.objects.filter(imsi=info['imsi']), many=True)
+            value_validator_exists_imei = validator.validator_exists_imei(info['imei'])
+            if value_validator_exists_imei:
+                serializer_data_imsi = ImeiConsultarSerializer(black_gray_list.objects.filter(imei=info['imei']),
+                                                               many=True)
                 data_response = {
                     "estado": "ok",
                     "mensaje": "ok",
                     "data": serializer_data_imsi.data,
                 }
-                log_imsi.grabar('QUERY', info["imsi"], None, None, None, info["source"],
+                log_imei.grabar('QUERY', info["imei"], None, None, None, info["source"],
                                 "Consulta Ok",
                                 data_user["username"],
                                 ip_transaccion, log
@@ -305,7 +295,7 @@ class ListaNegraConsultaViewSet(ViewSet):
             else:
                 data_response = {
                     "estado": "no_exists",
-                    "mensaje": "Codigo IMSI No existe",
+                    "mensaje": "Codigo IMEI No existe",
                     "data": None,
                 }
                 return Response(status=status.HTTP_200_OK, data=data_response)
@@ -325,8 +315,8 @@ class ListaNegraConsultaViewSet(ViewSet):
                 type=openapi.TYPE_ARRAY,
                 items=openapi.Schema(type=openapi.TYPE_OBJECT,
                                      properties={
-                                         'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
-                                                                description='Codigo IMSI'),
+                                         'imei': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                description='Codigo IMEI'),
                                          'fecha': openapi.Schema(type=openapi.TYPE_STRING,
                                                                  description='Fecha cuando registrado el codigo IMSI',
                                                                  ),
@@ -354,7 +344,7 @@ class ListaNegraConsultaViewSet(ViewSet):
         }
     )
     def list(self, request):
-        metodos = FunctionsListaNegra()
+        metodos = FunctionsListaNegraImei()
         try:
             # serializer_data_imsi = ListaNegraSerializer(black_imsi.objects.all(), many=True)
             data_lista_negra = metodos.generarListaNegraTotal()
@@ -363,17 +353,17 @@ class ListaNegraConsultaViewSet(ViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
 
 
-class ListaNegraEliminarViewSet(ViewSet):
+class ImeiBlackEliminarViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        operation_description='API para eliminar IMSI registrado en lista negra',
+        operation_description='API para eliminar IMEI registrado en lista negra',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
-            required=['imsi', 'source', 'reason'],
+            required=['imei', 'source', 'reason'],
             properties={
-                'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
-                                       description="Codigo IMSI que se va registrar",
+                'imei': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                       description="Codigo IMEI que se va registrar",
                                        example=123456789012345,
                                        max_length=15),
                 'source': openapi.Schema(type=openapi.TYPE_STRING,
@@ -411,15 +401,15 @@ class ListaNegraEliminarViewSet(ViewSet):
         }
     )
     def create(self, request):
-        log_imsi = RegistroLog()
-        validator = ValidatorListaNegra()
-        metodos = FunctionsListaNegra()
+        log_imei = RegistroLog()
+        validator = ImeiRequestValidator()
+        metodos = FunctionsListaNegraImei()
         info = request.POST if request.POST else request.data if request.data else None
 
         try:
 
             # registrando en log el request enviando
-            log.info(f"request eliminar_imsi: {str(info)}")
+            log.info(f"request eliminar_imei: {str(info)}")
 
             # Obtengo la sesion del usuario que esta conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
@@ -429,7 +419,7 @@ class ListaNegraEliminarViewSet(ViewSet):
 
             # Evaluando los parametros recibidos:
             estado_parametros = validator.validator_parameters(info,
-                                                               ['imsi', 'source', 'reason'])
+                                                               ['imei', 'source', 'reason'])
 
             if estado_parametros == False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -450,39 +440,30 @@ class ListaNegraEliminarViewSet(ViewSet):
                                       "mensaje": message_validator_request_origen})
 
             # Evaluando longitud del codigo IMSI
-            message_validator_length_imsi = validator.validator_length_imsi(info['imsi'])
-            if len(message_validator_length_imsi) > 0:
+            message_validator_length_imei = validator.validator_length_imei(info['imei'])
+            if len(message_validator_length_imei) > 0:
                 # log_imsi.grabar('DELETE', info["imsi"], None, None, None, info["source"],
                 #                "error: " + message_validator_length_imsi,
                 #                data_user["username"],
                 #                ip_transaccion
                 #               )
                 return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error", "mensaje": message_validator_length_imsi})
+                                data={"estado": "error", "mensaje": message_validator_length_imei})
 
             # Evaluando que el codigo IMSI sea solo numeros
-            message_validator_request_onlynumber = validator.validator_onlynumber_imsi(info['imsi'])
+            message_validator_request_onlynumber = validator.validator_onlynumber_imei(info['imei'])
             if len(message_validator_request_onlynumber) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error",
                                       "mensaje": message_validator_request_onlynumber})
 
             # Evaluando si existe el codigo IMSI
-            value_validator_exists_imsi = validator.validator_exists_imsi(info['imsi'])
-            if value_validator_exists_imsi:
-                obj_listanegra = black_imsi.objects.get(pk=info["imsi"])
+            value_validator_exists_imei = validator.validator_exists_imei(info['imei'])
+            if value_validator_exists_imei:
+                obj_listanegra = black_gray_list.objects.get(pk=info["imei"])
                 obj_listanegra.delete()
-                """
-                Aqui se elimina el registro que se encuentra en la base REPLICA
-                
-                """
-                try:
-                    obj_listanegra_replica = black_imsi.objects.using('replica').get(pk=info["imsi"])
-                    obj_listanegra_replica.delete()
-                except Exception as e:
-                    log.error(f"Fallo la eliminacion IMSI en la base Replica: {str(e)}")
 
-                log_imsi.grabar('DELETE', info["imsi"], None, None, info["reason"], info["source"],
+                log_imei.grabar('DELETE', info["imei"], None, None, info["reason"], info["source"],
                                 "Eliminacion Ok",
                                 data_user["username"],
                                 ip_transaccion, log
@@ -495,7 +476,7 @@ class ListaNegraEliminarViewSet(ViewSet):
             else:
                 data_response = {
                     "estado": "no_exists",
-                    "mensaje": "Codigo IMSI No existe"
+                    "mensaje": "Codigo IMEI No existe"
                 }
                 return Response(status=status.HTTP_200_OK, data=data_response)
 
@@ -516,10 +497,10 @@ class LogXUsuarioViewSet(ViewSet):
                 items=openapi.Schema(type=openapi.TYPE_OBJECT,
                                      properties={
                                          'accion': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                  description='Accion realizada sobre el codigo IMSI',
+                                                                  description='Accion realizada sobre el codigo IMEI',
                                                                   example="INSERT"),
-                                         'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
-                                                                description='Codigo IMSI', example=123456789012345),
+                                         'imei': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                description='Codigo IMEI', example=123456789012345),
                                          'operadora': openapi.Schema(type=openapi.TYPE_STRING,
                                                                      description='Operador telefonico',
                                                                      example='claro'),
@@ -561,15 +542,14 @@ class LogXUsuarioViewSet(ViewSet):
         }
     )
     def list(self, request):
-        validator = ValidatorListaNegra()
-        metodos = FunctionsListaNegra()
+        metodos = FunctionsListaNegraImei()
         try:
 
             # Obtengo la sesion del usuario que esta conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
 
-            serializer_log = LogSerializer(
-                log_aprov_eir.objects.filter(usuario_descripcion=data_user['username']).order_by('-fecha_bitacora')[
+            serializer_log = LogImeiSerializer(
+                log_imei_eir.objects.filter(usuario_descripcion=data_user['username']).order_by('-fecha_bitacora')[
                 0:100],
                 many=True)
             return Response(status=status.HTTP_200_OK, data=serializer_log.data)
@@ -577,275 +557,7 @@ class LogXUsuarioViewSet(ViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
 
 
-class LogXIMSIViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(
-        operation_description='API para consulta de todos los LOGS de un codigo IMSI ingresado',
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['imsi'],
-            properties={
-                'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
-                                       description="Codigo IMSI que se va registrar",
-                                       example=123456789012345,
-                                       max_length=15),
-            }
-        ),
-        responses={
-            200: openapi.Schema(
-                type=openapi.TYPE_ARRAY,
-                items=openapi.Schema(type=openapi.TYPE_OBJECT,
-                                     properties={
-                                         'accion': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                  description='Accion realizada sobre el codigo IMSI',
-                                                                  example="INSERT"),
-                                         'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
-                                                                description='Codigo IMSI', example=123456789012345),
-                                         'operadora': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                     description='Operador telefonico',
-                                                                     example='claro'),
-                                         'lista': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                 description='Tipo lista',
-                                                                 example='negra'),
-                                         'razon': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                 description='Motivo de la transaccion sobre el codigo IMSI registrado',
-                                                                 example='Fue bloqueado'),
-                                         'origen': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                  description='Origen de la transaccion',
-                                                                  example='api'),
-                                         'fecha_bitacora': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
-                                                                          description='Fecha transaccion',
-                                                                          ),
-                                         'usuario_descripcion': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                               description='Usuario que realizo transaccion con el codigo IMSI',
-                                                                               ),
-                                         'ip_transaccion': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                          description='Direccion IP de donde se realizo la transaccion',
-                                                                          ),
-                                     }
-                                     )
-            ),
-            400: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
-                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            ),
-            401: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
-                }
-            )
-        }
-    )
-    def create(self, request):
-        validator = ValidatorListaNegra()
-        try:
-            info = request.POST if request.POST else request.data if request.data else None
-
-            # Evaluando longitud del codigo IMSI
-            message_validator_length_imsi = validator.validator_length_imsi(info['imsi'])
-            if len(message_validator_length_imsi) > 0:
-                return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error", "mensaje": message_validator_length_imsi})
-
-            # Evaluando que el codigo IMSI sea solo numeros
-            message_validator_request_onlynumber = validator.validator_onlynumber_imsi(info['imsi'])
-            if len(message_validator_request_onlynumber) > 0:
-                return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error",
-                                      "mensaje": message_validator_request_onlynumber})
-
-            serializer_log = LogSerializer(
-                log_aprov_eir.objects.filter(imsi=info['imsi']).order_by('-fecha_bitacora'),
-                many=True)
-            return Response(status=status.HTTP_200_OK, data=serializer_log.data)
-        except Exception as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
-
-
-class LogXFechasViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(
-        operation_description='API para consulta de todos los LOGS por un rango de fecha determinado',
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['fecha_desde', 'fecha_hasta'],
-            properties={
-                'fecha_desde': openapi.Schema(type=openapi.TYPE_STRING,
-                                              format=FORMAT_DATE,
-                                              description="Fecha de inicio de busqueda"),
-                'fecha_hasta': openapi.Schema(type=openapi.TYPE_STRING,
-                                              format=FORMAT_DATE,
-                                              description="Fecha de fin de busqueda")
-            }
-        ),
-        responses={
-            200: openapi.Schema(
-                type=openapi.TYPE_ARRAY,
-                items=openapi.Schema(type=openapi.TYPE_OBJECT,
-                                     properties={
-                                         'accion': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                  description='Accion realizada sobre el codigo IMSI',
-                                                                  example="INSERT"),
-                                         'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
-                                                                description='Codigo IMSI', example=123456789012345),
-                                         'operadora': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                     description='Operador telefonico',
-                                                                     example='claro'),
-                                         'lista': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                 description='Tipo lista',
-                                                                 example='negra'),
-                                         'razon': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                 description='Motivo de la transaccion sobre el codigo IMSI registrado',
-                                                                 example='Fue bloqueado'),
-                                         'origen': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                  description='Origen de la transaccion',
-                                                                  example='api'),
-                                         'fecha_bitacora': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
-                                                                          description='Fecha transaccion',
-                                                                          ),
-                                         'usuario_descripcion': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                               description='Usuario que realizo transaccion con el codigo IMSI',
-                                                                               ),
-                                         'ip_transaccion': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                          description='Direccion IP de donde se realizo la transaccion',
-                                                                          ),
-                                     }
-                                     )
-            ),
-            400: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
-                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            ),
-            401: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
-                }
-            )
-        }
-    )
-    def create(self, request):
-        try:
-            info = request.POST if request.POST else request.data if request.data else None
-
-            serializer_log = LogSerializer(
-                log_aprov_eir.objects.filter(Q(fecha_bitacora__date__range=[info['fecha_desde'], info['fecha_hasta']])),
-                many=True)
-            return Response(status=status.HTTP_200_OK, data=serializer_log.data)
-        except Exception as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
-
-
-class ParametrosOperadoraView(ViewSet):
-    permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(
-        operation_description='API para obtener el listado de valores de Operadora',
-        responses={
-            200: openapi.Schema(
-                type=openapi.TYPE_ARRAY,
-                items=openapi.Schema(type=openapi.TYPE_OBJECT,
-                                     properties={
-                                         'valor': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                 description='Valor de operadora',
-                                                                 example="claro"),
-                                     }
-                                     )
-            ),
-            400: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
-                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            ),
-            401: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
-                }
-            )
-        }
-    )
-    def list(self, request):
-        try:
-            # Se hace una validacion de los parametros lista, operadora y origen
-            # para verificar si se esta recibiendo los calores que corresponden
-            # segun lo definido en el config.json
-            path = apps.get_app_config('lista_negra').path
-            config = open(path + r'/config/config.json')
-            data = json.load(config)
-            data_response = data["valores_operadora"]
-            return Response(status=status.HTTP_200_OK, data=data_response)
-        except Exception as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
-
-
-class ParametrosRutaFtpView(ViewSet):
-    permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(
-        operation_description='API para obtener la ruta FTP configurada en el archivo config.json',
-        responses={
-            200: openapi.Schema(
-                type=openapi.TYPE_ARRAY,
-                items=openapi.Schema(type=openapi.TYPE_OBJECT,
-                                     properties={
-                                         'valor': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                 description='Valor de operadora',
-                                                                 example="claro"),
-                                     }
-                                     )
-            ),
-            400: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
-                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            ),
-            401: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
-                }
-            )
-        }
-    )
-    def list(self, request):
-        try:
-            path = apps.get_app_config('lista_negra').path
-            config = open(path + r'/config/config.json')
-            data = json.load(config)
-            ruta_config_jobmasivo = data["ruta_ftp_job_masivo"]
-            # Una vez obtenida la lectura
-            config_job = open(fr'{data["ruta_ftp_job_masivo"]}')
-            data_job = json.load(config_job)
-
-            data_response = data
-            data_response = {
-                "estado": "ok",
-                "mensaje": data_job["PATH_FTP_CSV"]
-            }
-            return Response(status=status.HTTP_200_OK, data=data_response)
-        except Exception as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
-
-
-class ArchivoMasivoViewSet(ViewSet):
+class ImeiBlackMasivoViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
@@ -921,8 +633,8 @@ class ArchivoMasivoViewSet(ViewSet):
     )
     def list(self, request):
         try:
-            serializer = FileProcessSerializer(
-                files_process_bulk.objects.all().order_by('-fecha_archivo_procesando'),
+            serializer = ImeiMasivoSerializer(
+                files_imei_bulk.objects.all().order_by('-fecha_archivo_procesando'),
                 many=True)
             return Response(status=status.HTTP_200_OK, data=serializer.data)
         except Exception as e:
@@ -933,7 +645,7 @@ class ArchivoMasivoViewSet(ViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data=data_response)
 
     @swagger_auto_schema(
-        operation_description='API para registrar un IMSI masivo a Lista Negra',
+        operation_description='API para registrar un IMEI masivo a Lista Negra',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             required=['nombre_archivo_csv'],
@@ -971,11 +683,12 @@ class ArchivoMasivoViewSet(ViewSet):
         }
     )
     def create(self, request):
-        metodos = FunctionsListaNegra()
+
+        metodos = FunctionsListaNegraImei()
         info = request.POST if request.POST else request.data if request.data else None
         try:
             # registrando en log el request enviando
-            log.info(f"request registro_imsi_masivo: {str(info)}")
+            log.info(f"request registro_imei_masivo: {str(info)}")
 
             # Obtengo la sesion del usuario conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
@@ -989,7 +702,7 @@ class ArchivoMasivoViewSet(ViewSet):
                 'usuario_registro': data_user['username'],
                 'ip_registro': ip_transaccion
             }
-            serializer = FileProcessRegistroSerializer(data=data_request)
+            serializer = ImeiMasivoRegistroSerializer(data=data_request)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
             data_response = {
@@ -1005,11 +718,11 @@ class ArchivoMasivoViewSet(ViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data=data_response)
 
     def partial_update(self, request, pk=None):
-        metodos = FunctionsListaNegra()
+        metodos = FunctionsListaNegraImei()
         info = request.POST if request.POST else request.data if request.data else None
         try:
             # registrando en log el request enviando
-            log.info(f"request actualizacion_imsi_masivo: {str(info)}")
+            log.info(f"request actualizacion_imei_masivo: {str(info)}")
 
             # Obtengo la sesion del usuario conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
@@ -1018,8 +731,8 @@ class ArchivoMasivoViewSet(ViewSet):
             info["ip_actualizacion"] = metodos.obtenerDireccionIpRemota(request)
             info["usuario_actualizacion"] = data_user["username"]
 
-            obj_fileprocessbulk = files_process_bulk.objects.get(pk=pk)
-            serializer = FileProcessActualizarSerializer(obj_fileprocessbulk, data=info, partial=True)
+            obj_fileprocessbulk = files_imei_bulk.objects.get(pk=pk)
+            serializer = ImeiMasivoActualizarSerializer(obj_fileprocessbulk, data=info, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 return Response(status=status.HTTP_200_OK, data=serializer.data)
@@ -1033,11 +746,11 @@ class ArchivoMasivoViewSet(ViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data=data_response)
 
 
-class ReporteBloqueadoViewSet(ViewSet):
+class ImeiBlackReporteBloqueadoViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        operation_description='API para generar archivo CSV de todos los IMSI bloqueados',
+        operation_description='API para generar archivo CSV de todos los IMEI bloqueados',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             required=['fecha_inicio', 'fecha_fin'],
@@ -1075,7 +788,7 @@ class ReporteBloqueadoViewSet(ViewSet):
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
         try:
-            funcion = FunctionsListaNegra()
+            funcion = FunctionsListaNegraImei()
             valores_data = funcion.generarReporteBloqueados(info)
 
             # file_download = open(ruta_archivo, 'r')
@@ -1089,13 +802,13 @@ class ReporteBloqueadoViewSet(ViewSet):
             writer = csv.writer(response, delimiter="|")
 
             writer.writerow(
-                ['accion', 'imsi', 'telco', 'list', 'reason', 'source', 'datetime_operation', 'detail', 'user_id',
+                ['accion', 'imei', 'telco', 'list', 'reason', 'source', 'datetime_operation', 'detail', 'user_id',
                  'source_ip'])
 
             for item in valores_data["lista_valores"]:
                 writer.writerow([
                     item["accion"],
-                    item["imsi"],
+                    item["imei"],
                     item["operadora"],
                     item["lista"],
                     item["razon"],
@@ -1111,7 +824,7 @@ class ReporteBloqueadoViewSet(ViewSet):
             return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ReporteDesbloqueadoViewSet(ViewSet):
+class ImeiBlackReporteDesbloqueadoViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
@@ -1153,7 +866,7 @@ class ReporteDesbloqueadoViewSet(ViewSet):
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
         try:
-            funcion = FunctionsListaNegra()
+            funcion = FunctionsListaNegraImei()
             valores_data = funcion.generarReporteDesbloqueados(info)
 
             # file_download = open(ruta_archivo, 'r')
@@ -1167,13 +880,13 @@ class ReporteDesbloqueadoViewSet(ViewSet):
             writer = csv.writer(response, delimiter="|")
 
             writer.writerow(
-                ['accion', 'imsi', 'telco', 'list', 'reason', 'source', 'datetime_operation', 'detail', 'user_id',
+                ['accion', 'imei', 'telco', 'list', 'reason', 'source', 'datetime_operation', 'detail', 'user_id',
                  'source_ip'])
 
             for item in valores_data["lista_valores"]:
                 writer.writerow([
                     item["accion"],
-                    item["imsi"],
+                    item["imei"],
                     item["operadora"],
                     item["lista"],
                     item["razon"],
@@ -1189,7 +902,7 @@ class ReporteDesbloqueadoViewSet(ViewSet):
             return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ReporteGeneralLogViewSet(ViewSet):
+class ImeiBlackReporteGeneralLogViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
@@ -1220,7 +933,7 @@ class ReporteGeneralLogViewSet(ViewSet):
         }
     )
     def list(self, request):
-        funcion = FunctionsListaNegra()
+        funcion = FunctionsListaNegraImei()
         try:
             data = funcion.generarSumario()
             return Response(data={"estado": "ok", "mensaje": data}, status=status.HTTP_200_OK)
@@ -1266,7 +979,7 @@ class ReporteGeneralLogViewSet(ViewSet):
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
         try:
-            funcion = FunctionsListaNegra()
+            funcion = FunctionsListaNegraImei()
             valores_data = funcion.generarReporteGeneralLog(info)
             response = HttpResponse(
                 content_type='text/csv',
@@ -1276,13 +989,13 @@ class ReporteGeneralLogViewSet(ViewSet):
             writer = csv.writer(response, delimiter="|")
 
             writer.writerow(
-                ['accion', 'imsi', 'telco', 'list', 'reason', 'source', 'datetime_operation', 'detail', 'user_id',
+                ['accion', 'imei', 'telco', 'list', 'reason', 'source', 'datetime_operation', 'detail', 'user_id',
                  'source_ip'])
 
             for item in valores_data["lista_valores"]:
                 writer.writerow([
                     item["accion"],
-                    item["imsi"],
+                    item["imei"],
                     item["operadora"],
                     item["lista"],
                     item["razon"],
@@ -1294,160 +1007,5 @@ class ReporteGeneralLogViewSet(ViewSet):
                 ])
             return response
             # return Response(data={"estado": "ok", "mensaje": nombre_csv_creado}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class ReporteSumarioDetalladoView(ViewSet):
-    permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(
-        operation_description='API para generar archivo CSV um sumario detallado de todos los IMSI registrados',
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['fecha_inicio', 'fecha_fin'],
-            properties={
-                'fecha_inicio': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
-                                               description="Fecha desde a buscar en la tabla de logs",
-                                               ),
-                'fecha_fin': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
-                                            description="Fecha fin a buscar en la tabla de logs",
-                                            ),
-            }
-        ),
-        responses={
-            200: openapi.Schema(
-                type=openapi.TYPE_FILE,
-                content_type='text/csv',
-                content_disposition='attachment; filename="summary.csv"'
-            ),
-            400: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
-                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            ),
-            401: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
-                }
-            )
-        }
-    )
-    def create(self, request):
-        info = request.POST if request.POST else request.data if request.data else None
-        try:
-            funcion = FunctionsListaNegra()
-            valores_data = funcion.generarSumarioDetallado(info)
-
-            # ordenamiento
-            valores_data.sort(key=lambda x: x.get('imsi'), reverse=True)
-            valores_data.sort(key=lambda x: x.get('total_insert'), reverse=True)
-            valores_data.sort(key=lambda x: x.get('total_query'), reverse=True)
-            valores_data.sort(key=lambda x: x.get('total_delete'), reverse=True)
-
-            response = HttpResponse(
-                content_type='text/csv',
-            )
-            response['Content-Disposition'] = 'attachment; filename="myfile.csv"'
-
-            writer = csv.writer(response, delimiter="|")
-
-            writer.writerow(
-                ['imsi', 'total_insert', 'total_query', 'total_delete'])
-
-            for item in valores_data:
-                writer.writerow([
-                    item["imsi"],
-                    item["total_insert"],
-                    item["total_query"],
-                    item["total_delete"]
-                ])
-            return response
-            # return Response(data={"estado": "ok", "mensaje": nombre_csv_creado}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class ConsultarTDRViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
-
-    def create(self, request):
-        info = request.POST if request.POST else request.data if request.data else None
-        # obtengo los parametros enviados en el request:
-        codigo_imsi = info['imsi']
-        codigo_imei = info['imei']
-        fecha_desde = info['fecha_desde']
-        fecha_hasta = info['fecha_hasta']
-
-        if len(fecha_desde.strip()) == 0 or len(fecha_hasta.strip()) == 0:
-            return Response(data='Los campos de fecha son obligatorios', status=status.HTTP_400_BAD_REQUEST)
-
-        funcion = FunctionsListaNegra()
-        data_response = funcion.consultarTdr(codigo_imsi, codigo_imei, fecha_desde, fecha_hasta)
-        if data_response["estado"] == "ok":
-            return Response(data=data_response, status=status.HTTP_200_OK)
-        else:
-            return Response(data=data_response, status=status.HTTP_400_BAD_REQUEST)
-
-
-class ReporteTDRViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
-
-    def create(self, request):
-        info = request.POST if request.POST else request.data if request.data else None
-        try:
-            codigo_imsi = info['imsi']
-            codigo_imei = info['imei']
-            fecha_desde = info['fecha_desde']
-            fecha_hasta = info['fecha_hasta']
-
-            if len(fecha_desde.strip()) == 0 or len(fecha_hasta.strip()) == 0:
-                return Response(data='Los campos de fecha son obligatorios', status=status.HTTP_400_BAD_REQUEST)
-
-            funcion = FunctionsListaNegra()
-            data_response = funcion.consultarTdr(codigo_imsi, codigo_imei, fecha_desde, fecha_hasta)
-            if data_response["estado"] == "ok":
-
-                response = HttpResponse(
-                    content_type='text/csv',
-                )
-                response['Content-Disposition'] = 'attachment; filename="myfile.csv"'
-
-                writer = csv.writer(response, delimiter="|")
-
-                writer.writerow(
-                    ['id', 'fecha', 'hora', 'central', 'imei', 'imsi', 'codigo1', 'codigo2', 'tecnologia'])
-
-                for item in data_response['mensaje']:
-                    writer.writerow([
-                        item["id"],
-                        item["fecha"],
-                        item["hora"],
-                        item["central"],
-                        item["imei"],
-                        item["imsi"],
-                        item["codigo1"],
-                        item["codigo2"],
-                        item["tecnologia"]
-                    ])
-                return response
-            else:
-                return Response(data=data_response, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class ConsultarDesBloquedosViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
-
-    def list(self, request):
-        funcion = FunctionsListaNegra()
-        try:
-            data_response = funcion.generarListaNegraDesbloqueadosTotal()
-            return Response(data=data_response, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)

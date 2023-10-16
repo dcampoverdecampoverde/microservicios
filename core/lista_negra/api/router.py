@@ -17,6 +17,8 @@ router_default_LN.register(prefix='log_consulta_usuario', basename='log_consulta
                            viewset=LogXUsuarioViewSet)
 router_default_LN.register(prefix='log_consulta_imsi', basename='log_consulta_usuario',
                            viewset=LogXIMSIViewSet)
+router_default_LN.register(prefix='log_consulta_fechas', basename='log_consulta_fechas',
+                           viewset=LogXFechasViewSet)
 router_default_LN.register(prefix='archivo_masivo', basename='archivo_masivo',
                            viewset=ArchivoMasivoViewSet)
 router_default_LN.register(prefix='reporte_blocked', basename='reporte_blocked',

@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'users_system',
     'admin_app',
-    'lista_negra'
+    'lista_negra',
+    'imei'
 ]
 
 MIDDLEWARE = [
@@ -88,22 +89,24 @@ DATABASES = {
         },
         'USER': 'postgres',
         'PASSWORD': 'password',
-        'HOST': '192.168.1.15',
-        'PORT': '5432',
-        'CONN_MAX_AGE': None
-    },
-    'replica': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'eirdb',
-        'OPTIONS': {
-            'options': '-c search_path=eir_catalog'
-        },
-        'USER': 'postgres',
-        'PASSWORD': 'password',
         'HOST': 'localhost',
         'PORT': '5432',
         'CONN_MAX_AGE': None
-    },
+    }
+
+    # ,
+    # 'replica': {
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     'NAME': 'eirdb',
+    #     'OPTIONS': {
+    #         'options': '-c search_path=eir_catalog'
+    #     },
+    #     'USER': 'postgres',
+    #     'PASSWORD': 'password',
+    #     'HOST': 'localhost',
+    #     'PORT': '5432',
+    #     'CONN_MAX_AGE': None
+    # },
 }
 
 # Password validation
