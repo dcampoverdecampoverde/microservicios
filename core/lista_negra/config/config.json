@@ -45,5 +45,29 @@
     }
   ],
   "ruta_reportes": "c:/temp/report_csv_files/",
-  "ruta_ftp_job_masivo": "C:/Users/dcamp/OneDrive/Documentos/Proyecto_CLARO/Aplicativo/Job_Masivo/config.json"
+  "ruta_ftp_job_masivo": "C:/Users/dcamp/OneDrive/Documentos/Proyecto_CLARO/Aplicativo/Job_Masivo/config.json",
+  "valores_target": [
+    {
+      "valor": "imsi"
+    },
+    {
+      "valor": "imei"
+    }
+  ],
+  "target_imsi": "imsi",
+  "target_imei": "imei",
+  "valores_action_api": [
+    {
+      "valor": "IN"
+    },
+    {
+      "valor": "QY"
+    },
+    {
+      "valor": "DE"
+    }
+  ],
+  "action_api_registrar": "IN",
+  "action_api_consultar": "QY",
+  "action_api_eliminar": "DE"
 }

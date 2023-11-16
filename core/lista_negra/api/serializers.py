@@ -143,3 +143,17 @@ class TdrSerializer(serializers.ModelSerializer):
             'codigo2',
             'tecnologia'
         ]
+
+
+class UserApiActionSerializer(serializers.ModelSerializer):
+    insert_register = serializers.DateTimeField(format='%d/%m/%Y %H:%M:%S')
+
+    class Meta:
+        model = user_api_actions
+        fields = [
+            'username',
+            'status',
+            'action',
+            'target',
+            'insert_register'
+        ]

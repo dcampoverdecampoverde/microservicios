@@ -1,7 +1,7 @@
 from django.db.models import Q
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from lista_negra.api.serializers import LogSerializer, TdrSerializer
+from lista_negra.api.serializers import LogSerializer, TdrSerializer, UserApiActionSerializer
 from lista_negra.models import *
 
 
@@ -251,3 +251,44 @@ class FunctionsListaNegra():
         name, condition, value = values
         key = f"{name}__{condition}"
         return key, value
+
+    def validarAccionApiUsuario(self, usuario, target, accion):
+        accion_permitida = False
+        if user_api_actions.objects.filter(
+                Q(username=usuario) & Q(target=target) & Q(action=accion) & Q(status='A')).exists():
+            accion_permitida = True
+
+        return accion_permitida
+
+    def listaAccionApiUsuarios(self):
+        serializer_data = UserApiActionSerializer(user_api_actions.objects.all(), many=True)
+        data = serializer_data.data
+        lista_response = []
+        for item_data in data:
+            valor_action = self.switch(item_data['action'], 'action')
+            valor_target = self.switch(item_data['target'], 'target')
+            item_response = {
+                "username": item_data['username'],
+                "status": item_data['status'],
+                "action": valor_action,
+                "target": valor_target,
+                "insert_register": item_data['insert_register']
+            }
+            lista_response.append(item_response)
+        return lista_response
+
+    def switch(self, valor, target):
+        if target == "action":
+            if valor == 'IN':
+                return "Agregar"
+            if valor == 'QY':
+                return "Consultar"
+            if valor == 'DE':
+                return "Eliminar"
+        elif target == "target":
+            if valor == 'imsi':
+                return "IMSI"
+            if valor == 'imei':
+                return "IMEI"
+        else:
+            return None

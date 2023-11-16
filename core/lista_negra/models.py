@@ -64,3 +64,17 @@ class imei_imsi_block(models.Model):
         indexes = [
             models.Index(fields=['imei', 'imsi']),
         ]
+
+
+# Tabla agregada para tener el control de usuarios con las acciones de los Api (IMSI, IMEI)
+class user_api_actions(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    username = models.CharField(max_length=100)
+    status = models.CharField(max_length=1)
+    action = models.CharField(max_length=2)
+    target = models.CharField(max_length=100, blank=True, null=True)
+    api_url = models.CharField(max_length=100, blank=True, null=True)
+    insert_register = models.DateTimeField(default=now)
+    insert_ip = models.CharField(max_length=25, blank=True)
+    update_register = models.DateTimeField(blank=True, null=True)
+    update_ip = models.CharField(max_length=25, blank=True, null=True)

@@ -91,8 +91,22 @@ class ListaNegraRegistroViewSet(ViewSet):
             # registrando en log el request enviando
             log.info(f"request registro_imsi: {str(info)}")
 
+            path = apps.get_app_config('lista_negra').path
+            config = open(path + r'/config/config.json')
+            data = json.load(config)
+            target_imsi = data["target_imsi"]
+            action_api_insert = data["action_api_registrar"]
+
             # Obtengo la sesion del usuario que esta conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
+
+            # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imsi,
+                                                                       action_api_insert)
+            if usuario_accion_permitida is False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": "Su usuario no tiene permisos para acceder a esta accion : Ingreso -> Imsi"})
 
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
@@ -250,8 +264,22 @@ class ListaNegraConsultaViewSet(ViewSet):
             # registrando en log el request enviando
             log.info(f"request consulta_imsi: {str(info)}")
 
+            path = apps.get_app_config('lista_negra').path
+            config = open(path + r'/config/config.json')
+            data = json.load(config)
+            target_imsi = data["target_imsi"]
+            action_api_select = data["action_api_consultar"]
+
             # Obtengo la sesion del usuario que esta conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
+
+            # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imsi,
+                                                                       action_api_select)
+            if usuario_accion_permitida is False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": "Su usuario no tiene permisos para acceder a esta accion : Consulta -> Imsi"})
 
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
@@ -421,8 +449,22 @@ class ListaNegraEliminarViewSet(ViewSet):
             # registrando en log el request enviando
             log.info(f"request eliminar_imsi: {str(info)}")
 
+            path = apps.get_app_config('lista_negra').path
+            config = open(path + r'/config/config.json')
+            data = json.load(config)
+            target_imsi = data["target_imsi"]
+            action_api_delete = data["action_api_eliminar"]
+
             # Obtengo la sesion del usuario que esta conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
+
+            # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imsi,
+                                                                       action_api_delete)
+            if usuario_accion_permitida is False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": "Su usuario no tiene permisos para acceder a esta accion : Eliminar -> Imsi"})
 
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
@@ -1448,6 +1490,18 @@ class ConsultarDesBloquedosViewSet(ViewSet):
         funcion = FunctionsListaNegra()
         try:
             data_response = funcion.generarListaNegraDesbloqueadosTotal()
+            return Response(data=data_response, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ListaUsuariosApiActionsViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        funcion = FunctionsListaNegra()
+        try:
+            data_response = funcion.listaAccionApiUsuarios()
             return Response(data=data_response, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
