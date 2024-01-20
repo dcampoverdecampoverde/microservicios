@@ -9,11 +9,31 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+import json
+import os
 from datetime import timedelta
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Con estas lineas se busca poner en secreto las claves de acceso
+# ----------------------------------------------------------------
+with open(os.path.join(BASE_DIR, 'secrets.json')) as secrets_file:
+    secrets = json.load(secrets_file)
+
+
+def get_secret(setting, secrets=secrets):
+    """Get secret setting or fail with ImproperlyConfigured"""
+    try:
+        return secrets[setting]
+    except KeyError:
+        raise ImproperlyConfigured("Set the {} setting".format(setting))
+
+
+# ----------------------------------------------------------------
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -88,7 +108,7 @@ DATABASES = {
             'options': '-c search_path=eir_catalog'
         },
         'USER': 'postgres',
-        'PASSWORD': 'password',
+        'PASSWORD': get_secret('DB_PASSWORD'),  # 'password',
         'HOST': 'localhost',
         'PORT': '5432',
         'CONN_MAX_AGE': None

@@ -5,12 +5,12 @@ from django.utils.timezone import now
 # Create your models here.
 class black_gray_list(models.Model):
     imei = models.BigIntegerField(primary_key=True, error_messages={'unique': 'Codigo IMEI ya se encuentra registrado'})
-    list = models.CharField(max_length=1, null=True)
+    list = models.CharField(max_length=1, null=True, blank=True)
     last_imsi = models.BigIntegerField(null=True, blank=True)
-    operator_code = models.CharField(max_length=15, null=True)
+    operator_code = models.CharField(max_length=15, blank=True, null=False)
     actvt_date = models.DateTimeField(auto_now_add=True, null=False)
     actvt_obs = models.CharField(max_length=255, null=True)
-    code = models.SmallIntegerField(null=True, blank=False)
+    code = models.SmallIntegerField(null=False, blank=True)
 
     class Meta:
         db_table = 'black_gray_list'

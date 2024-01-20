@@ -1,3 +1,7 @@
 # Default ignored files
 /shelf/
 /workspace.xml
+*.py[co]
+*.sw[po]
+*~
+/secrets.json
