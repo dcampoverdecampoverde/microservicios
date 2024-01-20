@@ -151,6 +151,7 @@ class UserApiActionSerializer(serializers.ModelSerializer):
     class Meta:
         model = user_api_actions
         fields = [
+            'id',
             'username',
             'status',
             'action',

@@ -84,6 +84,12 @@ class ImeiBlackRegistroViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
 
         try:
+            path = apps.get_app_config('lista_negra').path
+            config = open(path + r'/config/config.json')
+            data = json.load(config)
+            target_imei = data["target_imei"]
+            action_api_insert = data["action_api_registrar"]
+
             # registrando en log el request enviando
             log.info(f"request registro_imei: {str(info)}")
 
@@ -92,6 +98,14 @@ class ImeiBlackRegistroViewSet(ViewSet):
 
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
+
+            # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imei,
+                                                                       action_api_insert)
+            if usuario_accion_permitida is False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": "Su usuario no tiene permisos para acceder a esta accion : Ingreso -> Imei"})
 
             """
             # Evaluando los parametros recibidos:
@@ -144,13 +158,19 @@ class ImeiBlackRegistroViewSet(ViewSet):
                                       "mensaje": message_validator_request_onlynumber})
 
             # Evaluando longitud del codigo IMSI
-            message_validator_length_imsi = validator.validator_length_imei(info['imei'])
-            if len(message_validator_length_imsi) > 0:
+            message_validator_length_imei = validator.validator_length_imei(info['imei'])
+            if len(message_validator_length_imei) > 0:
                 # log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"], info["source"],
                 #                "error: " + message_validator_length_imsi,
                 #                data_user["username"], ip_transaccion)
                 return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error", "mensaje": message_validator_length_imsi})
+                                data={"estado": "error", "mensaje": message_validator_length_imei})
+
+            # Validando si existe o no el IMEI
+            value_validator_exists_imei = validator.validator_exists_imei(info['imei'])
+            if value_validator_exists_imei:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error", "mensaje": "Exte codigo IMEI ya se encuentra registrado."})
 
             serializer = ImeiRegistroSerializer(data=info)
             if serializer.is_valid(raise_exception=True):
@@ -235,7 +255,11 @@ class ImeiBlackConsultaViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
 
         try:
-
+            path = apps.get_app_config('lista_negra').path
+            config = open(path + r'/config/config.json')
+            data = json.load(config)
+            target_imei = data["target_imei"]
+            action_api_consultar = data["action_api_consultar"]
             # registrando en log el request enviando
             log.info(f"request consulta_imei: {str(info)}")
 
@@ -247,6 +271,14 @@ class ImeiBlackConsultaViewSet(ViewSet):
 
             # Evaluando los parametros recibidos:
             estado_parametros = validator.validator_parameters(info, ['imei', 'source'])
+
+            # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imei,
+                                                                       action_api_consultar)
+            if usuario_accion_permitida is False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": "Su usuario no tiene permisos para acceder a esta accion : Consultar -> Imei"})
 
             if estado_parametros == False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -276,7 +308,7 @@ class ImeiBlackConsultaViewSet(ViewSet):
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error", "mensaje": message_validator_length_imsi})
 
-            # Validando si existe o no el IMSI
+            # Validando si existe o no el IMEI
             value_validator_exists_imei = validator.validator_exists_imei(info['imei'])
             if value_validator_exists_imei:
                 serializer_data_imsi = ImeiConsultarSerializer(black_gray_list.objects.filter(imei=info['imei']),
@@ -407,6 +439,11 @@ class ImeiBlackEliminarViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
 
         try:
+            path = apps.get_app_config('lista_negra').path
+            config = open(path + r'/config/config.json')
+            data = json.load(config)
+            target_imei = data["target_imei"]
+            action_api_eliminar = data["action_api_eliminar"]
 
             # registrando en log el request enviando
             log.info(f"request eliminar_imei: {str(info)}")
@@ -420,6 +457,14 @@ class ImeiBlackEliminarViewSet(ViewSet):
             # Evaluando los parametros recibidos:
             estado_parametros = validator.validator_parameters(info,
                                                                ['imei', 'source', 'reason'])
+
+            # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imei,
+                                                                       action_api_eliminar)
+            if usuario_accion_permitida is False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": "Su usuario no tiene permisos para acceder a esta accion : Eliminar -> Imei"})
 
             if estado_parametros == False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,

@@ -37,3 +37,11 @@ router_default_LN.register(prefix='consulta_todo_desbloqueados', basename='consu
                            viewset=ConsultarDesBloquedosViewSet)
 router_default_LN.register(prefix='lista_api_actions_user', basename='lista_api_actions_user',
                            viewset=ListaUsuariosApiActionsViewSet)
+router_default_LN.register(prefix='api_actions_user_registro', basename='api_actions_user_registro',
+                           viewset=UsuariosApiActionsViewSet)
+router_default_LN.register(prefix='modificar_actions_user_registro', basename='modificar_actions_user_registro',
+                           viewset=UsuariosModificarApiActionsViewSet)
+router_default_LN.register(prefix='service_check_health', basename='service_check_health',
+                           viewset=ServiceCheckHeathViewSet)
+router_default_LN.register(prefix='top_imsi_frequently', basename='top_imsi_frequently',
+                           viewset=TopImsiFrequentlyViewSet)

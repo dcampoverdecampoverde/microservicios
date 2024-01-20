@@ -3,6 +3,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from imei.api.serializers import *
 from imei.models import *
+from lista_negra.models import user_api_actions
 
 
 class FunctionsListaNegraImei():
@@ -225,3 +226,11 @@ class FunctionsListaNegraImei():
             lista_resultados.append(data_resultados)
 
         return lista_resultados
+
+    def validarAccionApiUsuario(self, usuario, target, accion):
+        accion_permitida = False
+        if user_api_actions.objects.filter(
+                Q(username=usuario) & Q(target=target) & Q(action=accion) & Q(status='A')).exists():
+            accion_permitida = True
+
+        return accion_permitida

@@ -53,7 +53,7 @@ class ImeiRequestValidator():
 
     def validator_length_imei(self, codigo_imei):
         mensaje_return = ""
-        if len(str(codigo_imei)) < 15 or len(str(codigo_imei)) > 16:
+        if len(str(codigo_imei)) > 15:
             mensaje_return = "El codigo IMEI tiene una longitud incorrecta"
 
         return mensaje_return

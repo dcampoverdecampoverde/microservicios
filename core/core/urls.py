@@ -21,6 +21,7 @@ from drf_yasg.views import get_schema_view
 from admin_app.api.router import router_default
 from imei.api.router import router_imei
 from lista_negra.api.router import router_default_LN
+from task_scheduler.api.router import router_task
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -43,6 +44,7 @@ urlpatterns = [
     path('api/', include(router_default.urls)),
     path('api/transaction/', include(router_default_LN.urls)),
     path('api/imei/', include(router_imei.urls)),
+    path('api/task/', include(router_task.urls)),
     # path('schema/', SpectacularAPIView.as_view(), name='schema'),
     # path('schema/docs/', SpectacularSwaggerView.as_view(url_name='schema')),
 ]
