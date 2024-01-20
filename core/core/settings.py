@@ -62,7 +62,8 @@ INSTALLED_APPS = [
     'users_system',
     'admin_app',
     'lista_negra',
-    'imei'
+    'imei',
+    'task_scheduler'
 ]
 
 MIDDLEWARE = [

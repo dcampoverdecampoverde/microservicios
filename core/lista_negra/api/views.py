@@ -941,7 +941,10 @@ class ArchivoMasivoViewSet(ViewSet):
                                                                                  ),
                                          'ip_actualizacion': openapi.Schema(type=openapi.TYPE_STRING,
                                                                             description='Direccion IP de donde se esta consumiento el Api',
-                                                                            )
+                                                                            ),
+                                         'accion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                  description='Accion que se va a realizar con el proceso masivo. {I} : Ingreso {D}: Eliminacion',
+                                                                  )
                                      }
                                      )
             ),
@@ -983,7 +986,13 @@ class ArchivoMasivoViewSet(ViewSet):
                 'nombre_archivo_csv': openapi.Schema(type=openapi.TYPE_STRING,
                                                      description="Nombre archivo csv que se va a procesar",
                                                      example='mi_archivo.csv',
+                                                     required=1,
                                                      max_length=50),
+                'accion': openapi.Schema(type=openapi.TYPE_STRING,
+                                         description="Accion que se va a realizar con el proceso masivo. {I} : Ingreso {D}: Eliminacion",
+                                         example='I',
+                                         required=1,
+                                         max_length=1),
                 # 'visit_at': openapi.Schema(type=openapi.TYPE_STRING,
                 #                           format=FORMAT_DATE)
             }
@@ -1029,6 +1038,7 @@ class ArchivoMasivoViewSet(ViewSet):
                 'estado': 'pendiente',
                 'archivo_csv': info['nombre_archivo_csv'],
                 'usuario_registro': data_user['username'],
+                'accion': data_user['accion'],
                 'ip_registro': ip_transaccion
             }
             serializer = FileProcessRegistroSerializer(data=data_request)

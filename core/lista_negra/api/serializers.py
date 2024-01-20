@@ -94,6 +94,7 @@ class FileProcessSerializer(serializers.ModelSerializer):
             'fecha_actualizacion',
             'usuario_actualizacion',
             'ip_actualizacion',
+            'accion'
         ]
 
 
@@ -105,7 +106,8 @@ class FileProcessRegistroSerializer(serializers.ModelSerializer):
             'archivo_csv',
             'estado',
             'usuario_registro',
-            'ip_registro'
+            'ip_registro',
+            'accion'
         ]
 
 
