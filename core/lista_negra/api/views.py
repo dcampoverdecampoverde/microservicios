@@ -1515,3 +1515,53 @@ class ListaUsuariosApiActionsViewSet(ViewSet):
             return Response(data=data_response, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UsuariosApiActionsViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        funcion = FunctionsListaNegra()
+        info = request.POST if request.POST else request.data if request.data else None
+        try:
+            # Otengo la direccion remota
+            ip_transaccion = funcion.obtenerDireccionIpRemota(request)
+            data_response = funcion.registrarAccionApiUsuarios(info, ip_transaccion)
+            return Response(data=data_response, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UsuariosModificarApiActionsViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        funcion = FunctionsListaNegra()
+        info = request.POST if request.POST else request.data if request.data else None
+        try:
+            # Otengo la direccion remota
+            ip_transaccion = funcion.obtenerDireccionIpRemota(request)
+            data_response = funcion.modificarAccionApiUsuarios(info, ip_transaccion)
+            return Response(data=data_response, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TopImsiFrequentlyViewSet(ViewSet):
+    def list(self, request):
+        funcion = FunctionsListaNegra()
+        try:
+            data = funcion.generarTopImsiTransaccionados()
+            return Response(data={"estado": "ok", "data": data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ServiceCheckHeathViewSet(ViewSet):
+    def list(self, request):
+        funcion = FunctionsListaNegra()
+        try:
+            ip_remota = funcion.obtenerDireccionIpRemota(request)
+            return Response(data={"estado": "ok", "mensaje": ip_remota}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

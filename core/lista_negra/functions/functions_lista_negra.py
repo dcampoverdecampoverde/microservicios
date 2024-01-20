@@ -268,6 +268,7 @@ class FunctionsListaNegra():
             valor_action = self.switch(item_data['action'], 'action')
             valor_target = self.switch(item_data['target'], 'target')
             item_response = {
+                "id": item_data['id'],
                 "username": item_data['username'],
                 "status": item_data['status'],
                 "action": valor_action,
@@ -292,3 +293,68 @@ class FunctionsListaNegra():
                 return "IMEI"
         else:
             return None
+
+    def registrarAccionApiUsuarios(self, data_request, direccion_ip):
+        try:
+            if not user_api_actions.objects.filter(
+                    Q(username=data_request["username"]) & Q(target=data_request["target"]) & Q(
+                        action=data_request["action"])).exists():
+                # se agrega nuevo registro
+                user_api_actions.objects.create(
+                    username=data_request["username"],
+                    status=data_request["status"],
+                    action=data_request["action"],
+                    target=data_request["target"],
+                    api_url="",
+                    insert_ip=direccion_ip
+                )
+            else:
+                # se modifica registro
+                item_update = user_api_actions.get(username=data_request["user_id"], action=data_request["action"],
+                                                   target=data_request["target"])
+                item_update.status = data_request["status"]
+                item_update.update_register = datetime.datetime.now()
+                item_update.update_ip = direccion_ip
+                item_update.save()
+            return {"estado": "ok", "mensaje": "operación correcta"}
+        except Exception as e:
+            return {"estado": "error", "mensaje": str(e)}
+
+    def modificarAccionApiUsuarios(self, data_request, direccion_ip):
+        try:
+
+            object_user = user_api_actions.objects.get(id=data_request["id"])
+            object_user.status = data_request["estado"]
+            object_user.update_register = datetime.datetime.now()
+            object_user.update_ip = direccion_ip
+            object_user.save()
+            return {"estado": "ok", "mensaje": "operación correcta"}
+        except Exception as e:
+            return {"estado": "error", "mensaje": str(e)}
+
+    def generarTopImsiTransaccionados(self):
+        lista_resultados = []
+
+        lista_log = log_aprov_eir.objects.all().distinct('imsi')
+        for item_log in lista_log:
+            total_insert = 0
+            total_query = 0
+            total_delete = 0
+            total_general = 0
+            total_insert = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='INSERT')).count()
+            total_query = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='QUERY')).count()
+            total_delete = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='DELETE')).count()
+            total_general = total_insert + total_query + total_delete
+            data_resultados = {
+                'imsi': item_log.imsi,
+                'total_insert': total_insert,
+                'total_query': total_query,
+                'total_delete': total_delete,
+                'total_general': total_general
+            }
+            lista_resultados.append(data_resultados)
+
+        lista_resultados_ordenada_desc = sorted(lista_resultados, key=lambda x: x['total_general'], reverse=True)[:10]
+        # lista_resultados_ordenada_desc = list(lista_resultados_ordenada_desc.items())[:10]
+
+        return lista_resultados_ordenada_desc
