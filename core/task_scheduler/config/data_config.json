@@ -1,0 +1,28 @@
+{
+  "lista_jobs": [
+    {
+      "descripcion": "Job Archivos IMSI Masivo",
+      "valor": "C:\\Users\\dcamp\\OneDrive\\Documentos\\Proyecto_CLARO\\Aplicativo\\Job_Masivo\\jobs_imsi\\job_process_files_imsi_bulk.py"
+    },
+    {
+      "descripcion": "Job Generar IMSI bloqueados a FTP",
+      "valor": "C:\\Users\\dcamp\\OneDrive\\Documentos\\Proyecto_CLARO\\Aplicativo\\Job_Masivo\\jobs_imsi\\job_generate_csv_imsi_blocked_transfer_ftp.py"
+    },
+    {
+      "descripcion": "Job Generar IMSI desbloqueado a FTP",
+      "valor": "C:\\Users\\dcamp\\OneDrive\\Documentos\\Proyecto_CLARO\\Aplicativo\\Job_Masivo\\jobs_imsi\\job_generate_csv_imsi_unblocked_transfer_ftp.py"
+    },
+    {
+      "descripcion": "Job Generar IMSI Logs a FTP",
+      "valor": "C:\\Users\\dcamp\\OneDrive\\Documentos\\Proyecto_CLARO\\Aplicativo\\Job_Masivo\\jobs_imsi\\job_generate_csv_log_transfer_ftp.py"
+    },
+    {
+      "descripcion": "Job Generar IMSI Bloqueadas Dia Anterior desde FTP",
+      "valor": "C:\\Users\\dcamp\\OneDrive\\Documentos\\Proyecto_CLARO\\Aplicativo\\Job_Masivo\\jobs_imsi\\job_process_imsi_blocked_date_yesterday_from_ftp.py"
+    },
+    {
+      "descripcion": "Job Generar IMSI Desbloqueados Dia Anterior desde FTP",
+      "valor": "C:\\Users\\dcamp\\OneDrive\\Documentos\\Proyecto_CLARO\\Aplicativo\\Job_Masivo\\jobs_imsi\\job_process_imsi_unblocked_date_yesterday_from_ftp.py"
+    }
+  ]
+}
