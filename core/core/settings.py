@@ -15,6 +15,9 @@ from datetime import timedelta
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
+from django.core.servers.basehttp import WSGIServer
+
+WSGIServer.handle_error = lambda *args, **kwargs: None
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -109,7 +112,7 @@ DATABASES = {
             'options': '-c search_path=eir_catalog'
         },
         'USER': 'postgres',
-        'PASSWORD': get_secret('DB_PASSWORD'),  # 'password',
+        'PASSWORD': get_secret('DB_PASSWORD'),
         'HOST': 'localhost',
         'PORT': '5432',
         'CONN_MAX_AGE': None

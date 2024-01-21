@@ -47,7 +47,7 @@ class files_process_bulk(models.Model):
     fecha_actualizacion = models.DateTimeField(null=True, blank=True)
     usuario_actualizacion = models.CharField(max_length=50, blank=True, null=True)
     ip_actualizacion = models.CharField(max_length=50, blank=True, null=True)
-    accion = models.CharField(max_length=1, blank=True, null=True)
+    accion = models.CharField(max_length=10, blank=True, null=True)
 
 
 class imei_imsi_block(models.Model):

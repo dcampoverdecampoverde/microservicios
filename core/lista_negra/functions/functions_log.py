@@ -22,6 +22,8 @@ class RegistroLog():
         # Aqui se crea el registro de REPLICA
 
         # listado_imsi = black_imsi.objects.using('replica').all()
+        """
+        Queda desactivado
         try:
             log_aprov_eir.objects.using('replica').create(
                 estado="A",
@@ -38,3 +40,4 @@ class RegistroLog():
             )
         except Exception as e:
             log_file.error(f"Fallo la insercion LOGS con la base Replica: {str(e)}")
+        """

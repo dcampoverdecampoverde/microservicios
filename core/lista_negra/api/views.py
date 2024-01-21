@@ -168,15 +168,16 @@ class ListaNegraRegistroViewSet(ViewSet):
                 serializer.save()
 
                 """
-                Aqui se va a ingresar el nuevo IMSI en la base REPLIC                
-                """
-                try:
+                Aqui se va a ingresar el nuevo IMSI en la base REPLIC      
+                Queda desactivado
+                                try:
                     black_imsi.objects.using('replica').create(
                         imsi=info['imsi'],
                         source=info['source']
                     )
                 except Exception as e1:
-                    log.error(f"Fallo la insercion IMSI con la base Replica: {str(e1)}")
+                    log.error(f"Fallo la insercion IMSI con la base Replica: {str(e1)}")          
+                """
 
                 log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"],
                                 info["source"],
@@ -1038,7 +1039,7 @@ class ArchivoMasivoViewSet(ViewSet):
                 'estado': 'pendiente',
                 'archivo_csv': info['nombre_archivo_csv'],
                 'usuario_registro': data_user['username'],
-                'accion': data_user['accion'],
+                'accion': info['accion'],
                 'ip_registro': ip_transaccion
             }
             serializer = FileProcessRegistroSerializer(data=data_request)
