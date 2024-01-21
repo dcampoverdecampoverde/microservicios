@@ -54,6 +54,22 @@ class TareaJobListaSerializer(serializers.ModelSerializer):
         return obj
 
 
+class TareaJobActualizarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = programador_jobs
+        fields = [
+            'estado',
+            'tipo_horario',
+            'dias_semana',
+            'horario_rango',
+            'emails_notificacion',
+            'usuario_modificacion',
+            'terminal_modificacion',
+            'fecha_modificacion'
+
+        ]
+
+
 class TareaJobActualizarEjecucionSerializer(serializers.ModelSerializer):
     class Meta:
         model = programador_jobs

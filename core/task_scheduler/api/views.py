@@ -1,3 +1,4 @@
+import datetime
 import json
 
 from django.apps import apps
@@ -117,6 +118,35 @@ class ConsultarListadoTaskJobViewSet(ViewSet):
             return Response(status=status.HTTP_200_OK, data={"estado": "ok", "data": data_response})
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
+
+
+class ActualizarTaskJobViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, pk=None):
+        info = request.POST if request.POST else request.data if request.data else None
+        funciones = FuncionesGenerales()
+        try:
+            # usuario_sesion = funciones.obtenerUsuarioSesionToken(request)
+            data_user = funciones.obtenerUsuarioSesionToken(request)
+            obj_task = programador_jobs.objects.get(id=info["id"])
+            if obj_task is None:
+                return Response(status=status.HTTP_400_BAD_REQUEST, data=f"No existe una tarea con el ID {info['id']}")
+            else:
+                info["usuario_modificacion"] = data_user["username"]
+                info["terminal_modificacion"] = funciones.obtenerDireccionIpRemota(request)
+                info["fecha_modificacion"] = datetime.datetime.now()
+
+                serializer = TareaJobActualizarSerializer(obj_task, data=info, partial=True)
+                if serializer.is_valid(raise_exception=True):
+                    serializer.save()
+                    return Response(status=status.HTTP_200_OK, data={"estado": "ok", "mensaje": "operacion correcta"})
+                else:
+                    return Response(status=status.HTTP_400_BAD_REQUEST,
+                                    data={"estado": "error", "mensaje": serializer.errors})
+
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=str(e))
 
 
 class ActualizarEstadoTaskJobViewSet(ViewSet):

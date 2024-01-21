@@ -10,5 +10,7 @@ router_task.register(prefix='registrar_task_job', basename='registrar_task_job',
                      viewset=RegistrarProgramadorTareaViewSet)
 router_task.register(prefix='listado_task_job', basename='listado_task_job',
                      viewset=ConsultarListadoTaskJobViewSet)
+router_task.register(prefix='actualizar_task_job', basename='actualizar_task_job',
+                     viewset=ActualizarTaskJobViewSet)
 router_task.register(prefix='actualizar_estado_task_job', basename='actualizar_estado_task_job',
                      viewset=ActualizarEstadoTaskJobViewSet)

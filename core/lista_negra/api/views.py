@@ -1563,6 +1563,6 @@ class ServiceCheckHeathViewSet(ViewSet):
         funcion = FunctionsListaNegra()
         try:
             ip_remota = funcion.obtenerDireccionIpRemota(request)
-            return Response(data={"estado": "ok", "mensaje": ip_remota}, status=status.HTTP_200_OK)
+            return Response(data={"estado": "ok", "ip": ip_remota}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
