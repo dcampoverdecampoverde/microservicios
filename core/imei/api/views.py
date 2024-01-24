@@ -31,7 +31,7 @@ class ImeiBlackRegistroViewSet(ViewSet):
         operation_description='API para registrar un IMEI en lista negra',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
-            required=['imei'],
+            required=['imei', 'telco', 'list', 'reason', 'source'],
             properties={
                 'imei': openapi.Schema(type=openapi.TYPE_NUMBER,
                                        description="Codigo IMEI que se va registrar",
@@ -152,7 +152,14 @@ class ImeiBlackRegistroViewSet(ViewSet):
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error", "mensaje": message_validator_length_imsi})
 
-            serializer = ImeiRegistroSerializer(data=info)
+            data_request = {
+                "imei": info["imei"],
+                'list': info["list"],
+                'operator_code': info["telco"],
+                'actvt_obs': info["reason"],
+                'code': 11
+            }
+            serializer = ImeiRegistroSerializer(data=data_request)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
 
@@ -700,7 +707,8 @@ class ImeiBlackMasivoViewSet(ViewSet):
                 'estado': 'pendiente',
                 'archivo_csv': info['nombre_archivo_csv'],
                 'usuario_registro': data_user['username'],
-                'ip_registro': ip_transaccion
+                'ip_registro': ip_transaccion,
+                'accion': info['accion']
             }
             serializer = ImeiMasivoRegistroSerializer(data=data_request)
             if serializer.is_valid(raise_exception=True):

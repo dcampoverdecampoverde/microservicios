@@ -1,0 +1,10 @@
+{
+  "valor_accion_masivo": [
+    {
+      "valor": "insert"
+    },
+    {
+      "valor": "delete"
+    }
+  ]
+}

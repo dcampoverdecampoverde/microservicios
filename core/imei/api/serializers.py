@@ -8,6 +8,10 @@ class ImeiRegistroSerializer(serializers.ModelSerializer):
         model = black_gray_list
         fields = (
             'imei',
+            'list',
+            'operator_code',
+            'actvt_obs',
+            'code'
         )
 
 
@@ -79,6 +83,7 @@ class ImeiMasivoSerializer(serializers.ModelSerializer):
             'fecha_actualizacion',
             'usuario_actualizacion',
             'ip_actualizacion',
+            'accion',
         ]
 
 
@@ -90,7 +95,8 @@ class ImeiMasivoRegistroSerializer(serializers.ModelSerializer):
             'archivo_csv',
             'estado',
             'usuario_registro',
-            'ip_registro'
+            'ip_registro',
+            'accion',
         ]
 
 

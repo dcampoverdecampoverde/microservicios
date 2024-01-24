@@ -85,3 +85,18 @@ class ImeiRequestValidator():
                 parametros_correctos = False
 
         return parametros_correctos
+
+    def validator_parameter_accion_masivo(self, request_lista):
+        mensaje_return = ""
+        # Se hace una validacion de los parametros lista, operadora y origen
+        # para verificar si se esta recibiendo los calores que corresponden
+        # segun lo definido en el config.json
+        path = apps.get_app_config('imei').path
+        config = open(path + r'/config/config.json')
+        data = json.load(config)
+        # Evaluando Origen
+        existe_origen = list(filter(lambda x: x["valor"] == request_lista, data["valor_accion_masivo"]))
+        if len(existe_origen) <= 0:
+            mensaje_return = "El parametro {accion} tiene un valor que no es reconocible en la configuracion de los posibles valores que puede recibir. Revisar la documentacion"
+
+        return mensaje_return

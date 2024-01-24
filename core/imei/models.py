@@ -53,6 +53,7 @@ class files_imei_bulk(models.Model):
     fecha_actualizacion = models.DateTimeField(null=True, blank=True)
     usuario_actualizacion = models.CharField(max_length=50, blank=True, null=True)
     ip_actualizacion = models.CharField(max_length=50, blank=True, null=True)
+    accion = models.CharField(max_length=6, blank=True, null=True)
 
     class Meta:
         db_table = 'files_imei_bulk'
