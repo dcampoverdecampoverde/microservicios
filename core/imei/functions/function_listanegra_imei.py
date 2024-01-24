@@ -205,7 +205,7 @@ class FunctionsListaNegraImei():
         lista_resultados = []
 
         lista_log = log_imei_eir.objects.filter(
-            Q(fecha_bitacora__date__range=[data_request['fecha_inicio'], data_request['fecha_fin']])).distinct('imsi')
+            Q(fecha_bitacora__date__range=[data_request['fecha_inicio'], data_request['fecha_fin']])).distinct('imei')
         for item_log in lista_log:
             total_insert = 0
             total_query = 0
@@ -225,3 +225,30 @@ class FunctionsListaNegraImei():
             lista_resultados.append(data_resultados)
 
         return lista_resultados
+
+    def generarTopImeiTransaccionados(self):
+        lista_resultados = []
+
+        lista_log = log_imei_eir.objects.all().distinct('imei')
+        for item_log in lista_log:
+            total_insert = 0
+            total_query = 0
+            total_delete = 0
+            total_general = 0
+            total_insert = log_imei_eir.objects.filter(Q(imei=item_log.imei) & Q(accion='INSERT')).count()
+            total_query = log_imei_eir.objects.filter(Q(imei=item_log.imei) & Q(accion='QUERY')).count()
+            total_delete = log_imei_eir.objects.filter(Q(imei=item_log.imei) & Q(accion='DELETE')).count()
+            total_general = total_insert + total_query + total_delete
+            data_resultados = {
+                'imei': item_log.imei,
+                'total_insert': total_insert,
+                'total_query': total_query,
+                'total_delete': total_delete,
+                'total_general': total_general
+            }
+            lista_resultados.append(data_resultados)
+
+        lista_resultados_ordenada_desc = sorted(lista_resultados, key=lambda x: x['total_general'], reverse=True)[:10]
+        # lista_resultados_ordenada_desc = list(lista_resultados_ordenada_desc.items())[:10]
+
+        return lista_resultados_ordenada_desc

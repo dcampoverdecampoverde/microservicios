@@ -20,3 +20,15 @@ router_imei.register(prefix='imeiblack_reportedesbloqueado', basename='imeiblack
                      viewset=ImeiBlackReporteDesbloqueadoViewSet)
 router_imei.register(prefix='imeiblack_reporteloggeneral', basename='imeiblack_reporteloggeneral',
                      viewset=ImeiBlackReporteGeneralLogViewSet)
+router_imei.register(prefix='logimei', basename='logimei',
+                     viewset=LogXImeiViewSet)
+router_imei.register(prefix='top_imei_frequently', basename='top_imei_frequently',
+                     viewset=TopImeiFrequentlyViewSet)
+router_imei.register(prefix='reporte_logs', basename='reporte_logs',
+                     viewset=ReporteGeneralLogViewSet)
+router_imei.register(prefix='reporte_blocked', basename='reporte_blocked',
+                     viewset=ReporteBloqueadoViewSet)
+router_imei.register(prefix='reporte_unblocked', basename='reporte_unblocked',
+                     viewset=ReporteDesbloqueadoViewSet)
+router_imei.register(prefix='reporte_summary', basename='reporte_summary',
+                     viewset=ReporteSumarioDetalladoView)
