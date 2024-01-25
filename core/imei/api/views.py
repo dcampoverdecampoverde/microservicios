@@ -1457,3 +1457,148 @@ class ReporteSumarioDetalladoView(ViewSet):
             # return Response(data={"estado": "ok", "mensaje": nombre_csv_creado}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ConsultaImeiBloqueadoXFechaViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description='API para consultar todos los IMEI bloqueados en un rango de fecha',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['fecha_inicio', 'fecha_fin'],
+            properties={
+                'fecha_inicio': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                               description="Fecha desde a buscar en la tabla de lista negra",
+                                               ),
+                'fecha_fin': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                            description="Fecha fin a buscar en la tabla de lista negra",
+                                            ),
+            }
+        ),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_FILE,
+                content_type='text/csv',
+                content_disposition='attachment; filename="blocked.csv"'
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
+    def create(self, request):
+        info = request.POST if request.POST else request.data if request.data else None
+        try:
+            funcion = FunctionsListaNegraImei()
+            valores_data = funcion.generarReporteBloqueados(info)
+
+            lista_data_imei = []
+            for item in valores_data["lista_valores"]:
+                data_imei = {
+                    "accion": item["accion"],
+                    "imei": item["imei"],
+                    "telco": item["operadora"],
+                    "list": item["lista"],
+                    "reason": item["razon"],
+                    "source": item["origen"],
+                    "datetime_operation": item["fecha_bitacora"],
+                    "detail": item["descripcion"],
+                    "user_id": item["usuario_descripcion"],
+                    "source_ip": item["ip_transaccion"]
+                }
+                lista_data_imei.append(data_imei)
+            # return lista_data_imsi
+            return Response(data={"estado": "ok", "data": lista_data_imei}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ConsultaImeiDesBloqueadoXFechaViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description='API para consultar todos los IMEI desbloqueados en un rango de fecha',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['fecha_inicio', 'fecha_fin'],
+            properties={
+                'fecha_inicio': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                               description="Fecha desde a buscar en la tabla de lista negra",
+                                               ),
+                'fecha_fin': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                            description="Fecha fin a buscar en la tabla de lista negra",
+                                            ),
+            }
+        ),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_FILE,
+                content_type='text/csv',
+                content_disposition='attachment; filename="unblocked.csv"'
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
+    def create(self, request):
+        info = request.POST if request.POST else request.data if request.data else None
+        try:
+            funcion = FunctionsListaNegraImei()
+            valores_data = funcion.generarReporteDesbloqueados(info)
+
+            # file_download = open(ruta_archivo, 'r')
+            # response = HttpResponse(file_download, content_type='text/csv')
+            # response['Content-Disposition'] = 'attachment; filename="{}"'.format(valores_data["nombre_archivo"])
+            # response = HttpResponse(
+            #    content_type='text/csv',
+            # )
+            # response['Content-Disposition'] = 'attachment; filename="myfile.csv"'
+
+            # writer = csv.writer(response, delimiter="|")
+
+            # writer.writerow(
+            #    ['accion', 'imsi', 'telco', 'list', 'reason', 'source', 'datetime_operation', 'detail', 'user_id',
+            #     'source_ip'])
+            lista_response = []
+            for item in valores_data["lista_valores"]:
+                item_response = {
+                    "accion": item["accion"],
+                    "imei": item["imei"],
+                    "telco": item["operadora"],
+                    "list": item["lista"],
+                    "reason": item["razon"],
+                    "source": item["origen"],
+                    "datetime_operation": item["fecha_bitacora"],
+                    "detail": item["descripcion"],
+                    "user_id": item["usuario_descripcion"],
+                    "source_ip": item["ip_transaccion"]
+                }
+                lista_response.append(item_response)
+            # return response
+            return Response(data={"estado": "ok", "mensaje": lista_response}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)

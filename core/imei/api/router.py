@@ -32,3 +32,7 @@ router_imei.register(prefix='reporte_unblocked', basename='reporte_unblocked',
                      viewset=ReporteDesbloqueadoViewSet)
 router_imei.register(prefix='reporte_summary', basename='reporte_summary',
                      viewset=ReporteSumarioDetalladoView)
+router_imei.register(prefix='report_blocked_rangedate', basename='report_blocked_rangedate',
+                     viewset=ConsultaImeiBloqueadoXFechaViewSet)
+router_imei.register(prefix='report_unblocked_rangedate', basename='report_unblocked_rangedate',
+                     viewset=ConsultaImeiDesBloqueadoXFechaViewSet)

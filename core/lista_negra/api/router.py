@@ -45,3 +45,7 @@ router_default_LN.register(prefix='service_check_health', basename='service_chec
                            viewset=ServiceCheckHeathViewSet)
 router_default_LN.register(prefix='top_imsi_frequently', basename='top_imsi_frequently',
                            viewset=TopImsiFrequentlyViewSet)
+router_default_LN.register(prefix='report_blocked_rangedate', basename='report_blocked_rangedate',
+                           viewset=ConsultaImsiBloqueadoXFechaViewSet)
+router_default_LN.register(prefix='report_unblocked_rangedate', basename='report_unblocked_rangedate',
+                           viewset=ConsultaImsiDesBloqueadoXFechaViewSet)
