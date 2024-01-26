@@ -2,6 +2,7 @@ import csv
 import logging as log
 
 from django.db import DatabaseError
+from django.db.models import Q
 from django.http import HttpResponse
 from drf_yasg import openapi
 from drf_yasg.openapi import FORMAT_DATE
@@ -1602,3 +1603,94 @@ class ConsultaImeiDesBloqueadoXFechaViewSet(ViewSet):
             return Response(data={"estado": "ok", "mensaje": lista_response}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ConsultarDesBloquedosViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        funcion = FunctionsListaNegraImei()
+        try:
+            data_response = funcion.generarListaNegraDesbloqueadosTotal()
+            return Response(data=data_response, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LogXFechasViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description='API para consulta de todos los LOGS por un rango de fecha determinado',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['fecha_desde', 'fecha_hasta'],
+            properties={
+                'fecha_desde': openapi.Schema(type=openapi.TYPE_STRING,
+                                              format=FORMAT_DATE,
+                                              description="Fecha de inicio de busqueda"),
+                'fecha_hasta': openapi.Schema(type=openapi.TYPE_STRING,
+                                              format=FORMAT_DATE,
+                                              description="Fecha de fin de busqueda")
+            }
+        ),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                     properties={
+                                         'accion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                  description='Accion realizada sobre el codigo IMSI',
+                                                                  example="INSERT"),
+                                         'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                description='Codigo IMSI', example=123456789012345),
+                                         'operadora': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                     description='Operador telefonico',
+                                                                     example='claro'),
+                                         'lista': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                 description='Tipo lista',
+                                                                 example='negra'),
+                                         'razon': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                 description='Motivo de la transaccion sobre el codigo IMSI registrado',
+                                                                 example='Fue bloqueado'),
+                                         'origen': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                  description='Origen de la transaccion',
+                                                                  example='api'),
+                                         'fecha_bitacora': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
+                                                                          description='Fecha transaccion',
+                                                                          ),
+                                         'usuario_descripcion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                               description='Usuario que realizo transaccion con el codigo IMSI',
+                                                                               ),
+                                         'ip_transaccion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                          description='Direccion IP de donde se realizo la transaccion',
+                                                                          ),
+                                     }
+                                     )
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
+    def create(self, request):
+        try:
+            info = request.POST if request.POST else request.data if request.data else None
+
+            serializer_log = LogImeiSerializer(
+                log_imei_eir.objects.filter(Q(fecha_bitacora__date__range=[info['fecha_desde'], info['fecha_hasta']])),
+                many=True)
+            return Response(status=status.HTTP_200_OK, data=serializer_log.data)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})

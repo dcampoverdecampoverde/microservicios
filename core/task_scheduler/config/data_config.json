@@ -5,28 +5,64 @@
       "valor": "job_process_files_imsi_bulk.py"
     },
     {
-      "descripcion": "Job Generar IMSI bloqueados a FTP",
+      "descripcion": "Job Generar CSV IMSI bloqueados a FTP",
       "valor": "job_generate_csv_imsi_blocked_transfer_ftp.py"
     },
     {
-      "descripcion": "Job Generar IMSI desbloqueado a FTP",
+      "descripcion": "Job Generar CSV IMSI desbloqueado a FTP",
       "valor": "job_generate_csv_imsi_unblocked_transfer_ftp.py"
     },
     {
-      "descripcion": "Job Generar IMSI Logs a FTP",
+      "descripcion": "Job Generar CSV IMSI Logs a FTP",
       "valor": "job_generate_csv_log_transfer_ftp.py"
     },
     {
-      "descripcion": "Job Generar IMSI Bloqueadas Dia Anterior desde FTP",
+      "descripcion": "Job Generar IMSI Bloqueadas Inicio hasta Dia Anterior desde FTP",
       "valor": "job_process_imsi_blocked_date_yesterday_from_ftp.py"
     },
     {
-      "descripcion": "Job Generar IMSI Desbloqueados Dia Anterior desde FTP",
+      "descripcion": "Job Generar IMSI Desbloqueados Inicio hasta Dia Anterior desde FTP",
       "valor": "job_process_imsi_unblocked_date_yesterday_from_ftp.py"
+    },
+    {
+      "descripcion": "Job Generar IMSI Bloqueados Solo 1 Dia",
+      "valor": "job_process_imsi_blocked_range_datetime.py"
+    },
+    {
+      "descripcion": "Job Generar IMSI Desbloqueados Solo 1 Dia",
+      "valor": "job_process_imsi_unblocked_range_datetime.py"
     },
     {
       "descripcion": "Job Archivos IMEI Masivo",
       "valor": "job_process_files_imei_bulk.py"
+    },
+    {
+      "descripcion": "Job Generar CSV IMEI bloqueados a FTP",
+      "valor": "job_generate_csv_imei_blocked_transfer_ftp.py"
+    },
+    {
+      "descripcion": "Job Generar CSV IMEI desbloqueado a FTP",
+      "valor": "job_generate_csv_imei_unblocked_transfer_ftp.py"
+    },
+    {
+      "descripcion": "Job Generar CSV IMEI Logs a FTP",
+      "valor": "job_generate_csv_log_imei_transfer_ftp.py"
+    },
+    {
+      "descripcion": "Job Generar IMEI Bloqueadas Inicio hasta Dia Anterior desde FTP",
+      "valor": "job_process_imei_blocked_date_yesterday_from_ftp.py"
+    },
+    {
+      "descripcion": "Job Generar IMEI Desbloqueados Inicio hasta Dia Anterior desde FTP",
+      "valor": "job_process_imei_unblocked_date_yesterday_from_ftp.py"
+    },
+    {
+      "descripcion": "Job Generar IMEI Bloqueados Solo 1 Dia",
+      "valor": "job_process_imei_blocked_range_datetime.py"
+    },
+    {
+      "descripcion": "Job Generar IMEI Desbloqueados Solo 1 Dia",
+      "valor": "job_process_imei_unblocked_range_datetime.py"
     }
   ]
 }
