@@ -249,6 +249,17 @@ class FunctionsListaNegra():
         except Exception as e:
             return {"estado": "error", "mensaje": str(e)}
 
+    def consultarTdrRangoFecha(self, fecha_desde, fecha_hasta):
+        serializer_tdr = None
+        try:
+
+            data_tdr = imei_imsi_block.objects.filter(Q(
+                fecha__date__range=[fecha_desde, fecha_hasta]))
+
+            return {"estado": "ok", "mensaje": data_tdr}
+        except Exception as e:
+            return {"estado": "error", "mensaje": str(e)}
+
     def get_filter(self, values):
         name, condition, value = values
         key = f"{name}__{condition}"

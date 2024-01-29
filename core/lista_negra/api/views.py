@@ -1613,7 +1613,7 @@ class ReporteTDRViewSet(ViewSet):
                 return Response(data='Los campos de fecha son obligatorios', status=status.HTTP_400_BAD_REQUEST)
 
             funcion = FunctionsListaNegra()
-            data_response = funcion.consultarTdr(codigo_imsi, codigo_imei, fecha_desde, fecha_hasta)
+            data_response = funcion.consultarTdrRangoFecha(fecha_desde, fecha_hasta)
             if data_response["estado"] == "ok":
 
                 response = HttpResponse(
