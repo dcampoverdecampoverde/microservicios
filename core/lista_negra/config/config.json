@@ -69,5 +69,18 @@
   ],
   "action_api_registrar": "IN",
   "action_api_consultar": "QY",
-  "action_api_eliminar": "DE"
+  "action_api_eliminar": "DE",
+  "valores_listcheck_imei": [
+    {
+      "valor": "b"
+    }
+  ],
+  "valores_accion": [
+    {
+      "valor": "insert"
+    },
+    {
+      "valor": "delete"
+    }
+  ]
 }

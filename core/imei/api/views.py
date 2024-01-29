@@ -42,7 +42,7 @@ class ImeiBlackRegistroViewSet(ViewSet):
                                         description="Se reciben valores {'claro','telefonica','cnt','otros','masivo' }",
                                         max_length=15),
                 'list': openapi.Schema(type=openapi.TYPE_STRING,
-                                       description="Se reciben valores {'blanca','gris','negra'}",
+                                       description="Se reciben valores {'b'}",
                                        max_length=10),
                 'reason': openapi.Schema(type=openapi.TYPE_STRING,
                                          description="Descripcion cual fue el motivo del bloqueo del codigo IMEI",
@@ -94,6 +94,38 @@ class ImeiBlackRegistroViewSet(ViewSet):
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
 
+            path = apps.get_app_config('lista_negra').path
+            config = open(path + r'/config/config.json')
+            data = json.load(config)
+            target_imei = data["target_imei"]
+            action_api_insert = data["action_api_registrar"]
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imei,
+                                                                       action_api_insert)
+            if usuario_accion_permitida is False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": "Su usuario no tiene permisos para acceder a esta accion : Ingreso -> Imei"})
+
+                # Validando valor origen
+            message_validator_request_origen = validator.validator_parameter_list_check(info['list'])
+            if len(message_validator_request_origen) > 0:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": message_validator_request_origen})
+
+            # Evaluando Origen
+            message_validator_request_origen = validator.validator_parameter_origen(info['source'])
+            if len(message_validator_request_origen) > 0:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": message_validator_request_origen})
+
+            # Evaluando Operadora
+            message_validator_request_operadora = validator.validator_parameter_operadora(info['telco'])
+            if len(message_validator_request_operadora) > 0:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": message_validator_request_operadora})
             """
             # Evaluando los parametros recibidos:
             estado_parametros = validator.validator_parameters(info,
@@ -113,22 +145,6 @@ class ImeiBlackRegistroViewSet(ViewSet):
                                       "mensaje": "falta ingresar un motivo"})
             """
 
-            # Evaluando Operadora
-            """
-            message_validator_request_operadora = validator.validator_parameter_operadora(info['telco'])
-            if len(message_validator_request_operadora) > 0:
-                return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error",
-                                      "mensaje": message_validator_request_operadora})
-            """
-            # Evaluando Origen
-            """
-            message_validator_request_origen = validator.validator_parameter_origen(info['source'])
-            if len(message_validator_request_origen) > 0:
-                return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error",
-                                      "mensaje": message_validator_request_origen})
-            """
             # Evaluando Lista
             """
             message_validator_request_lista = validator.validator_parameter_lista(info['list'])
@@ -200,7 +216,7 @@ class ImeiBlackConsultaViewSet(ViewSet):
             required=['imei', 'source'],
             properties={
                 'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
-                                       description="Codigo IMEI que se va registrar",
+                                       description="Codigo IMEI que se va a consultar",
                                        example=123456789012345,
                                        max_length=15),
                 'source': openapi.Schema(type=openapi.TYPE_STRING,
@@ -244,11 +260,25 @@ class ImeiBlackConsultaViewSet(ViewSet):
 
         try:
 
+            path = apps.get_app_config('lista_negra').path
+            config = open(path + r'/config/config.json')
+            data = json.load(config)
+            target_imei = data["target_imei"]
+            action_api_select = data["action_api_consultar"]
+
             # registrando en log el request enviando
             log.info(f"request consulta_imei: {str(info)}")
 
             # Obtengo la sesion del usuario que esta conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
+
+            # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imei,
+                                                                       action_api_select)
+            if usuario_accion_permitida is False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": "Su usuario no tiene permisos para acceder a esta accion : Consulta -> Imei"})
 
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
@@ -317,7 +347,7 @@ class ImeiBlackConsultaViewSet(ViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e1)})
 
     @swagger_auto_schema(
-        operation_description='API para obtener todos los registros de Lista Negra',
+        operation_description='API para obtener todos los registros IMEI bloqueados de Lista Negra',
         responses={
             200: openapi.Schema(
                 type=openapi.TYPE_ARRAY,
@@ -354,6 +384,23 @@ class ImeiBlackConsultaViewSet(ViewSet):
     def list(self, request):
         metodos = FunctionsListaNegraImei()
         try:
+            path = apps.get_app_config('lista_negra').path
+            config = open(path + r'/config/config.json')
+            data = json.load(config)
+            target_imei = data["target_imei"]
+            action_api_select = data["action_api_consultar"]
+
+            # Obtengo la sesion del usuario que esta conectado
+            data_user = metodos.obtenerUsuarioSesionToken(request)
+
+            # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imei,
+                                                                       action_api_select)
+            if usuario_accion_permitida is False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": "Su usuario no tiene permisos para acceder a esta accion : Consulta -> Imei"})
+
             # serializer_data_imsi = ListaNegraSerializer(black_imsi.objects.all(), many=True)
             data_lista_negra = metodos.generarListaNegraTotal()
             return Response(status=status.HTTP_200_OK, data=data_lista_negra)
@@ -371,7 +418,7 @@ class ImeiBlackEliminarViewSet(ViewSet):
             required=['imei', 'source', 'reason'],
             properties={
                 'imei': openapi.Schema(type=openapi.TYPE_NUMBER,
-                                       description="Codigo IMEI que se va registrar",
+                                       description="Codigo IMEI que se va consultar",
                                        example=123456789012345,
                                        max_length=15),
                 'source': openapi.Schema(type=openapi.TYPE_STRING,
@@ -416,11 +463,25 @@ class ImeiBlackEliminarViewSet(ViewSet):
 
         try:
 
+            path = apps.get_app_config('lista_negra').path
+            config = open(path + r'/config/config.json')
+            data = json.load(config)
+            target_imei = data["target_imei"]
+            action_api_delete = data["action_api_eliminar"]
+
             # registrando en log el request enviando
             log.info(f"request eliminar_imei: {str(info)}")
 
             # Obtengo la sesion del usuario que esta conectado
             data_user = metodos.obtenerUsuarioSesionToken(request)
+
+            # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imei,
+                                                                       action_api_delete)
+            if usuario_accion_permitida is False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error",
+                                      "mensaje": "Su usuario no tiene permisos para acceder a esta accion : Eliminar -> Imei"})
 
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
@@ -450,11 +511,6 @@ class ImeiBlackEliminarViewSet(ViewSet):
             # Evaluando longitud del codigo IMSI
             message_validator_length_imei = validator.validator_length_imei(info['imei'])
             if len(message_validator_length_imei) > 0:
-                # log_imsi.grabar('DELETE', info["imsi"], None, None, None, info["source"],
-                #                "error: " + message_validator_length_imsi,
-                #                data_user["username"],
-                #                ip_transaccion
-                #               )
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"estado": "error", "mensaje": message_validator_length_imei})
 
@@ -569,7 +625,7 @@ class ImeiBlackMasivoViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        operation_description='API para obtener el listado de archivos masivos registrados desde UI',
+        operation_description='API para obtener el listado de archivos masivos registrados',
         responses={
             200: openapi.Schema(
                 type=openapi.TYPE_ARRAY,
@@ -653,17 +709,18 @@ class ImeiBlackMasivoViewSet(ViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data=data_response)
 
     @swagger_auto_schema(
-        operation_description='API para registrar un IMEI masivo a Lista Negra',
+        operation_description='API para registrar nombre archivos csv en el proceso IMEI Bulk',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
-            required=['nombre_archivo_csv'],
+            required=['nombre_archivo_csv', 'accion'],
             properties={
                 'nombre_archivo_csv': openapi.Schema(type=openapi.TYPE_STRING,
                                                      description="Nombre archivo csv que se va a procesar",
                                                      example='mi_archivo.csv',
                                                      max_length=50),
-                # 'visit_at': openapi.Schema(type=openapi.TYPE_STRING,
-                #                           format=FORMAT_DATE)
+                'accion': openapi.Schema(type=openapi.TYPE_STRING,
+                                         description="Accion que se va a realizar. Se reciben 2 valores {insert: Ingreso Masivo} o {delete: Eliminacion Masiva}",
+                                         example='insert', )
             }
         ),
         responses={
@@ -693,6 +750,7 @@ class ImeiBlackMasivoViewSet(ViewSet):
     def create(self, request):
 
         metodos = FunctionsListaNegraImei()
+        validator = ImeiRequestValidator()
         info = request.POST if request.POST else request.data if request.data else None
         try:
             # registrando en log el request enviando
@@ -703,6 +761,12 @@ class ImeiBlackMasivoViewSet(ViewSet):
 
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
+
+            # valido si esto recibiendo el parametro correccion de accion
+            message_validator_parameter_accion = validator.validator_parameter_accion_masivo(info["accion"])
+            if len(message_validator_parameter_accion) > 0:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"estado": "error", "mensaje": message_validator_parameter_accion})
 
             data_request = {
                 'estado': 'pendiente',
@@ -726,6 +790,66 @@ class ImeiBlackMasivoViewSet(ViewSet):
             }
             return Response(status=status.HTTP_400_BAD_REQUEST, data=data_response)
 
+    @swagger_auto_schema(
+        operation_description='API para actualizar estado de un registro del proceso masivo IMEI Bulk',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['estado', 'total_encontrado', 'total_error', 'total_ok', 'observacion',
+                      'fecha_archivo_procesando', 'fecha_archivo_finalizado', 'fecha_actualizacion',
+                      'usuario_actualizacion', 'ip_actualizacion'],
+            properties={
+                'estado': openapi.Schema(type=openapi.TYPE_STRING,
+                                         description="Estado del proceso. Posible valores {procesando, finalizado, pendiente}"
+                                         ),
+                'total_encontrado': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                   description="Total de registros encontrados"),
+                'total_error': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                              description="Total de registros encontrados con error"),
+                'total_ok': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                           description="Total de registros procesados correctamente"),
+                'observacion': openapi.Schema(type=openapi.TYPE_STRING,
+                                              description="Ingreso de una observacion a alguna novedad dectectada"),
+                'fecha_archivo_procesando': openapi.Schema(type=openapi.TYPE_STRING,
+                                                           description="Fecha que inicio proceso masivo",
+                                                           format=FORMAT_DATE),
+                'fecha_archivo_finalizado': openapi.Schema(type=openapi.TYPE_STRING,
+                                                           description="Fecha de fin de proceso masivo",
+                                                           format=FORMAT_DATE),
+                'fecha_actualizacion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                      description="Fecha de actualizacion",
+                                                      format=FORMAT_DATE),
+                'usuario_actualizacion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                        description="Usuario que esta realizando operacion. (Se tomara el usuario que tiene la sesion iniciada)"),
+                'ip_actualizacion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                   description="Direccion IP donde se esta ejecutando el proceso. (Se tomara la direcion del usuario que tiene la sesion iniciada)"),
+                # 'visit_at': openapi.Schema(type=openapi.TYPE_STRING,
+                #                           format=FORMAT_DATE)
+            }
+        ),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def partial_update(self, request, pk=None):
         metodos = FunctionsListaNegraImei()
         info = request.POST if request.POST else request.data if request.data else None
@@ -837,7 +961,7 @@ class ImeiBlackReporteDesbloqueadoViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        operation_description='API para generar archivo CSV de todos los IMSI desbloqueados',
+        operation_description='API para generar archivo CSV de todos los IMEI desbloqueados',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             required=['fecha_inicio', 'fecha_fin'],
@@ -915,7 +1039,7 @@ class ImeiBlackReporteGeneralLogViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        operation_description='API para generar un Sumario General Resumido',
+        operation_description='API para generar Sumario General Resumido de los IMEI Bloqueados y Desbloqueados',
         responses={
             200: openapi.Schema(
                 type=openapi.TYPE_OBJECT,
@@ -950,7 +1074,7 @@ class ImeiBlackReporteGeneralLogViewSet(ViewSet):
             return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
-        operation_description='API para generar archivo CSV de todos los LOG de los IMSI ingresados, consultados y eliminados',
+        operation_description='API para generar archivo CSV de todos los LOG de los IMEI ingresados, consultados y eliminados',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             required=['fecha_inicio', 'fecha_fin'],
@@ -1112,6 +1236,42 @@ class LogXImeiViewSet(ViewSet):
 
 
 class TopImeiFrequentlyViewSet(ViewSet):
+    @swagger_auto_schema(
+        operation_description='API para consultar TOP 10 Imei con mas movimiento transaccional',
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                     properties={
+                                         'imei': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                description='Codigo IMEI', example=123456789012345),
+                                         'total_insert': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                        description='Total de bloqueados'),
+                                         'total_query': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                       description='Total de consultados'),
+                                         'total_delete': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                        description='Total de desbloqueados'),
+                                         'total_general': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                         description='Total General')
+                                     }
+                                     )
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def list(self, request):
         funcion = FunctionsListaNegraImei()
         try:
@@ -1121,276 +1281,11 @@ class TopImeiFrequentlyViewSet(ViewSet):
             return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class ReporteGeneralLogViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(
-        operation_description='API para generar un Sumario General Resumido',
-        responses={
-            200: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'estado': openapi.Schema(type=openapi.TYPE_STRING, description='estado de la transaccion'),
-                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING,
-                                              description='data con el sumario general resumido')
-                }
-            ),
-            400: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
-                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            ),
-            401: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
-                }
-            )
-        }
-    )
-    def list(self, request):
-        funcion = FunctionsListaNegraImei()
-        try:
-            data = funcion.generarSumario()
-            return Response(data={"estado": "ok", "mensaje": data}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    @swagger_auto_schema(
-        operation_description='API para generar archivo CSV de todos los LOG de los IMSI ingresados, consultados y eliminados',
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['fecha_inicio', 'fecha_fin'],
-            properties={
-                'fecha_inicio': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
-                                               description="Fecha desde a buscar en la tabla de logs",
-                                               ),
-                'fecha_fin': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
-                                            description="Fecha fin a buscar en la tabla de logs",
-                                            ),
-            }
-        ),
-        responses={
-            200: openapi.Schema(
-                type=openapi.TYPE_FILE,
-                content_type='text/csv',
-                content_disposition='attachment; filename="logs.csv"'
-            ),
-            400: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
-                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            ),
-            401: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
-                }
-            )
-        }
-    )
-    def create(self, request):
-        info = request.POST if request.POST else request.data if request.data else None
-        try:
-            funcion = FunctionsListaNegraImei()
-            valores_data = funcion.generarReporteGeneralLog(info)
-            response = HttpResponse(
-                content_type='text/csv',
-            )
-            response['Content-Disposition'] = 'attachment; filename="myfile.csv"'
-
-            writer = csv.writer(response, delimiter="|")
-
-            writer.writerow(
-                ['accion', 'imei', 'telco', 'list', 'reason', 'source', 'datetime_operation', 'detail', 'user_id',
-                 'source_ip'])
-
-            for item in valores_data["lista_valores"]:
-                writer.writerow([
-                    item["accion"],
-                    item["imei"],
-                    item["operadora"],
-                    item["lista"],
-                    item["razon"],
-                    item["origen"],
-                    item["fecha_bitacora"],
-                    item["descripcion"],
-                    item["usuario_descripcion"],
-                    item["ip_transaccion"]
-                ])
-            return response
-            # return Response(data={"estado": "ok", "mensaje": nombre_csv_creado}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class ReporteBloqueadoViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(
-        operation_description='API para generar archivo CSV de todos los IMEI bloqueados',
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['fecha_inicio', 'fecha_fin'],
-            properties={
-                'fecha_inicio': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
-                                               description="Fecha desde a buscar en la tabla de lista negra",
-                                               ),
-                'fecha_fin': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
-                                            description="Fecha fin a buscar en la tabla de lista negra",
-                                            ),
-            }
-        ),
-        responses={
-            200: openapi.Schema(
-                type=openapi.TYPE_FILE,
-                content_type='text/csv',
-                content_disposition='attachment; filename="blocked.csv"'
-            ),
-            400: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
-                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            ),
-            401: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
-                }
-            )
-        }
-    )
-    def create(self, request):
-        info = request.POST if request.POST else request.data if request.data else None
-        try:
-            funcion = FunctionsListaNegraImei()
-            valores_data = funcion.generarReporteBloqueados(info)
-
-            # file_download = open(ruta_archivo, 'r')
-            # response = HttpResponse(file_download, content_type='text/csv')
-            # response['Content-Disposition'] = 'attachment; filename="{}"'.format(valores_data["nombre_archivo"])
-            response = HttpResponse(
-                content_type='text/csv',
-            )
-            response['Content-Disposition'] = 'attachment; filename="myfile.csv"'
-
-            writer = csv.writer(response, delimiter="|")
-
-            writer.writerow(
-                ['accion', 'imei', 'telco', 'list', 'reason', 'source', 'datetime_operation', 'detail', 'user_id',
-                 'source_ip'])
-
-            for item in valores_data["lista_valores"]:
-                writer.writerow([
-                    item["accion"],
-                    item["imei"],
-                    item["operadora"],
-                    item["lista"],
-                    item["razon"],
-                    item["origen"],
-                    item["fecha_bitacora"],
-                    item["descripcion"],
-                    item["usuario_descripcion"],
-                    item["ip_transaccion"]
-                ])
-            return response
-            # return Response(data={"estado": "ok", "mensaje": nombre_csv_creado}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class ReporteDesbloqueadoViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(
-        operation_description='API para generar archivo CSV de todos los IMSI desbloqueados',
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['fecha_inicio', 'fecha_fin'],
-            properties={
-                'fecha_inicio': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
-                                               description="Fecha desde a buscar en la tabla de lista negra",
-                                               ),
-                'fecha_fin': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE,
-                                            description="Fecha fin a buscar en la tabla de lista negra",
-                                            ),
-            }
-        ),
-        responses={
-            200: openapi.Schema(
-                type=openapi.TYPE_FILE,
-                content_type='text/csv',
-                content_disposition='attachment; filename="unblocked.csv"'
-            ),
-            400: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
-                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
-                }
-            ),
-            401: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
-                }
-            )
-        }
-    )
-    def create(self, request):
-        info = request.POST if request.POST else request.data if request.data else None
-        try:
-            funcion = FunctionsListaNegraImei()
-            valores_data = funcion.generarReporteDesbloqueados(info)
-
-            # file_download = open(ruta_archivo, 'r')
-            # response = HttpResponse(file_download, content_type='text/csv')
-            # response['Content-Disposition'] = 'attachment; filename="{}"'.format(valores_data["nombre_archivo"])
-            response = HttpResponse(
-                content_type='text/csv',
-            )
-            response['Content-Disposition'] = 'attachment; filename="myfile.csv"'
-
-            writer = csv.writer(response, delimiter="|")
-
-            writer.writerow(
-                ['accion', 'imei', 'telco', 'list', 'reason', 'source', 'datetime_operation', 'detail', 'user_id',
-                 'source_ip'])
-
-            for item in valores_data["lista_valores"]:
-                writer.writerow([
-                    item["accion"],
-                    item["imei"],
-                    item["operadora"],
-                    item["lista"],
-                    item["razon"],
-                    item["origen"],
-                    item["fecha_bitacora"],
-                    item["descripcion"],
-                    item["usuario_descripcion"],
-                    item["ip_transaccion"]
-                ])
-            return response
-            # return Response(data={"estado": "ok", "mensaje": nombre_csv_creado}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
 class ReporteSumarioDetalladoView(ViewSet):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        operation_description='API para generar archivo CSV um sumario detallado de todos los IMSI registrados',
+        operation_description='API para generar archivo CSV um sumario detallado de todos los IMEI registrados',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             required=['fecha_inicio', 'fecha_fin'],
@@ -1608,6 +1503,30 @@ class ConsultaImeiDesBloqueadoXFechaViewSet(ViewSet):
 class ConsultarDesBloquedosViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description='API para consultar todos los IMEI desbloqueados',
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_FILE,
+                content_type='text/csv',
+                content_disposition='attachment; filename="unblocked.csv"'
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
     def list(self, request):
         funcion = FunctionsListaNegraImei()
         try:

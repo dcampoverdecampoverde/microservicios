@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+
 import json
 import os
 from datetime import timedelta
@@ -18,7 +19,6 @@ from django.core.exceptions import ImproperlyConfigured
 from django.core.servers.basehttp import WSGIServer
 
 WSGIServer.handle_error = lambda *args, **kwargs: None
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -107,13 +107,13 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'eirdb',
+        'NAME': 'eirecudb',
         'OPTIONS': {
             'options': '-c search_path=eir_catalog'
         },
-        'USER': 'postgres',
+        'USER': 'eir_usr_ecu',
         'PASSWORD': get_secret('DB_PASSWORD'),
-        'HOST': 'localhost',
+        'HOST': '192.168.10.174',
         'PORT': '5432',
         'CONN_MAX_AGE': None
     }
