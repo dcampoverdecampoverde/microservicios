@@ -20,3 +20,4 @@ class programador_jobs(models.Model):
     usuario_modificacion = models.CharField(max_length=20, null=True)
     terminal_modificacion = models.CharField(max_length=15, null=True)
     fecha_modificacion = models.DateTimeField(null=True)
+    tipo = models.CharField(max_length=10, null=True, blank=True)

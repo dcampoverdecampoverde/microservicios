@@ -49,8 +49,14 @@ class ConsultaListaJobsViewSet(ViewSet):
             path = apps.get_app_config('task_scheduler').path
             config = open(path + r'/config/data_config.json')
             data = json.load(config)
-            data_response = data["lista_jobs"]
-            return Response(status=status.HTTP_200_OK, data=data_response)
+            tipo_seleccionado = request.GET.get("tipo")
+            if tipo_seleccionado is None or tipo_seleccionado == '':
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data="Error, falta enviar el parametro {tipo} y/o tenga un valor")
+            else:
+                data_response = list(filter(lambda x: x["tipo"] == tipo_seleccionado, data["lista_jobs"]))
+                return Response(status=status.HTTP_200_OK, data=data_response)
+
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
 
@@ -63,7 +69,7 @@ class RegistrarProgramadorTareaViewSet(ViewSet):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             required=['estado', 'nombre_tarea', 'dias_semana', 'tipo_horario', 'horario_rango',
-                      'job_ejecutar', 'job_descripcion', 'emails_notificacion',
+                      'job_ejecutar', 'job_descripcion', 'emails_notificacion', 'tipo',
                       'usuario_registro', 'terminal_registro'],
             properties={
                 'estado': openapi.Schema(type=openapi.TYPE_STRING,
@@ -86,6 +92,9 @@ class RegistrarProgramadorTareaViewSet(ViewSet):
                                                   description="Nombde de job seleccionado"),
                 'emails_notificacion': openapi.Schema(type=openapi.TYPE_STRING,
                                                       description="Listado de direcciones emails a quien se va a notificar la ejecucion de las tareas. Cada email debe estar por ,"),
+                'tipo_job': openapi.Schema(type=openapi.TYPE_STRING,
+                                           description="Tipo de Job que se esta registrando. Posible valores {imsi} o {imei}",
+                                           example="imsi"),
                 'usuario_registro': openapi.Schema(type=openapi.TYPE_STRING,
                                                    description="Usuario que esta realizando operacion. (Se tomara el usuario que tiene la sesion iniciada)"),
                 'terminal_registro': openapi.Schema(type=openapi.TYPE_STRING,
@@ -145,6 +154,7 @@ class RegistrarProgramadorTareaViewSet(ViewSet):
                 "job_ejecutar": info["job_ejecutar"],
                 "job_descripcion": info["job_descripcion"],
                 "emails_notificacion": info["emails_notificacion"],
+                "tipo": info["tipo_job"],
                 "usuario_registro": usuario_sesion["username"],
                 "terminal_registro": direccion_ip
             }
@@ -386,3 +396,44 @@ class ActualizarEstadoTaskJobViewSet(ViewSet):
 
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data=str(e))
+
+
+class ConsultarListaParametrosTargetViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description='API para consultar Listado Parametros Target',
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(type=openapi.TYPE_STRING),
+                    'status': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
+    def list(self, request):
+        try:
+            path = apps.get_app_config('lista_negra').path
+            config = open(path + r'/config/config.json')
+            data = json.load(config)
+            data_response = data["valores_target"]
+
+            return Response(status=status.HTTP_200_OK, data={"estado": "ok", "data": data_response})
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})

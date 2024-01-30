@@ -10,3 +10,4 @@ router_default.register(prefix='roles_usuario_menu', basename='roles_usuario_men
 router_default.register(prefix='roles', basename='roles', viewset=RolesViewSet)
 router_default.register(prefix='menu_opcion', basename='menu_opcion', viewset=MenuOpcionViewSet)
 router_default.register(prefix='acciones', basename='acciones', viewset=AccionesViewSet)
+router_default.register(prefix='menu_opcion_padre', basename='menu_opcion_padre', viewset=MenuOpcionPadreViewSet)

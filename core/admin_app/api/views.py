@@ -369,3 +369,49 @@ class RolesMenuAccionViewSet(ViewSet):
             return Response(status=status.HTTP_200_OK, data=serializer.data)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
+
+
+class MenuOpcionPadreViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description='API que consulta tabla maestra de Menu Opciones Padre',
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_OBJECT,
+                                     properties={
+                                         'menu_padre_id': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                                                         description='Identificador (ID) del menu padre'),
+                                         'estado': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                  description='Estado del menu'),
+                                         'descripcion': openapi.Schema(type=openapi.TYPE_STRING,
+                                                                       description='Descripcion del menu'),
+                                     }
+                                     )
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
+    def list(self, request):
+        try:
+            function = FuncionesAdminApp()
+            serializer = function.listaMenuOpcionPadre()
+            return Response(status=status.HTTP_200_OK, data=serializer.data)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={"estado": "error",
+                                  "mensaje": str(e)})

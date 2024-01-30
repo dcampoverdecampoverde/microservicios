@@ -28,7 +28,8 @@ class FuncionesAdminApp():
             for item_opcion in menu_opcion:
                 item_menu = {
                     "descripcion": item_opcion.descripcion,
-                    "url_page": item_opcion.url_page
+                    "url_page": item_opcion.url_page,
+                    "menu_padre_id": item_opcion.menu_id_padre
                 }
                 menu_opciones_usuario.append(item_menu)
         else:
@@ -38,7 +39,8 @@ class FuncionesAdminApp():
                 menu = MenuOpcion.objects.get(menu_id=item_rolmenu.menu_id_id)
                 data_menu_encontrado = {
                     "descripcion": menu.descripcion,
-                    "url_page": menu.url_page
+                    "url_page": menu.url_page,
+                    "menu_padre_id": menu.menu_id_padre
                 }
                 menu_opciones_usuario.append(data_menu_encontrado)
 
@@ -104,3 +106,7 @@ class FuncionesAdminApp():
             'mensaje': 'operacion correcta'
         }
         return data_response
+
+    def listaMenuOpcionPadre(self):
+        serializer = MenuOpcionPadreSerializer(MenuOpcionPadre.objects.all(), many=True)
+        return serializer
