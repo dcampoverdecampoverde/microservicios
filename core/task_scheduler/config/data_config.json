@@ -3,82 +3,98 @@
     {
       "descripcion": "Job Archivos IMSI Masivo",
       "valor": "job_process_files_imsi_bulk.py",
-      "tipo": "imsi"
+      "tipo": "imsi",
+      "detalle": "Tarea que se encarga de procesar los archivos ingresados en el UI y que existan en el FTP\tBloqueo particular en base a archivo SFTP e ingresado por UI\n"
     },
     {
       "descripcion": "Job Generar CSV IMSI bloqueados a FTP",
       "valor": "job_generate_csv_imsi_blocked_transfer_ftp.py",
-      "tipo": "imsi"
+      "tipo": "imsi",
+      "detalle": "Genera archivos CSV de todos los IMEI bloqueados y los transfiere a un FTP\tGenerar CSV con el contenido de toda la lista negra y transfiere a SFTP\n"
     },
     {
       "descripcion": "Job Generar CSV IMSI desbloqueado a FTP",
       "valor": "job_generate_csv_imsi_unblocked_transfer_ftp.py",
-      "tipo": "imsi"
+      "tipo": "imsi",
+      "detalle": "Genera archivos CSV de todos los IMEI desbloqueados y los transfiere a un FTP\tGenerar CSV con todos los IMSIs desbloqueados y transfiere a SFTP\n"
     },
     {
       "descripcion": "Job Generar CSV IMSI Logs a FTP",
       "valor": "job_generate_csv_log_transfer_ftp.py",
-      "tipo": "imsi"
+      "tipo": "imsi",
+      "detalle": "Genera archivos CSV de todos los logs registrados de los IMEI\tGenerar CSV de logs IMSI con acciones del dia anterior y transfiere a SFTP"
     },
     {
       "descripcion": "Job Generar IMSI Bloqueadas Inicio hasta Dia Anterior desde FTP",
       "valor": "job_process_imsi_blocked_date_yesterday_from_ftp.py",
-      "tipo": "imsi"
+      "tipo": "imsi",
+      "detalle": "Procesa archivos CSV  de los IMSI bloqueados que contengan como nombre la fecha_anterior y que se encuentren subidos en el FTP\tBloqueo masivo automatico recurrente en base a archivo SFTP\n"
     },
     {
       "descripcion": "Job Generar IMSI Desbloqueados Inicio hasta Dia Anterior desde FTP",
       "valor": "job_process_imsi_unblocked_date_yesterday_from_ftp.py",
-      "tipo": "imsi"
+      "tipo": "imsi",
+      "detalle": "Procesa archivos CSV  de los IMSI desbloqueados que contengan como nombre la fecha_anterior y que se encuentren subidos en el FTP\tDesbloqueo masivo automatico recurrente en base a archivo SFTP"
     },
     {
       "descripcion": "Job Generar IMSI Bloqueados Solo 1 Dia",
       "valor": "job_process_imsi_blocked_range_datetime.py",
-      "tipo": "imsi"
+      "tipo": "imsi",
+      "detalle": "Procesa data de IMSI bloqueados con un rango de fecha determinado, para el caso, solo el dia anterrior\tGenerar CSV con IMSIs bloqueados solo el dia anterior\n"
     },
     {
       "descripcion": "Job Generar IMSI Desbloqueados Solo 1 Dia",
       "valor": "job_process_imsi_unblocked_range_datetime.py",
-      "tipo": "imsi"
+      "tipo": "imsi",
+      "detalle": "Procesa data de IMSI desbloqueados con un rango de fecha determinado, para el caso, solo el dia anterrior\tGenerar CSV con IMSIs desbloqueados solo el dia anterior"
     },
     {
       "descripcion": "Job Archivos IMEI Masivo",
       "valor": "job_process_files_imei_bulk.py",
-      "tipo": "imei"
+      "tipo": "imei",
+      "detalle": "Tarea que se encarga de procesar los archivos ingresados en el UI y que existan en el FTP\tBloqueo particular en base a archivo SFTP e ingresado por UI\n"
     },
     {
       "descripcion": "Job Generar CSV IMEI bloqueados a FTP",
       "valor": "job_generate_csv_imei_blocked_transfer_ftp.py",
-      "tipo": "imei"
+      "tipo": "imei",
+      "detalle": "Genera archivos CSV de todos los IMEI bloqueados y los transfiere a un FTP\tGenerar CSV con el contenido de toda la lista negra y transfiere a SFTP\n"
     },
     {
       "descripcion": "Job Generar CSV IMEI desbloqueado a FTP",
       "valor": "job_generate_csv_imei_unblocked_transfer_ftp.py",
-      "tipo": "imei"
+      "tipo": "imei",
+      "detalle": "Genera archivos CSV de todos los IMEI desbloqueados y los transfiere a un FTP\tGenerar CSV con todos los IMSIs desbloqueados y transfiere a SFTP\n"
     },
     {
       "descripcion": "Job Generar CSV IMEI Logs a FTP",
       "valor": "job_generate_csv_log_imei_transfer_ftp.py",
-      "tipo": "imei"
+      "tipo": "imei",
+      "detalle": "Genera archivos CSV de todos los logs registrados de los IMEI\tGenerar CSV de logs IMSI con acciones del dia anterior y transfiere a SFTP\n"
     },
     {
       "descripcion": "Job Generar IMEI Bloqueadas Inicio hasta Dia Anterior desde FTP",
       "valor": "job_process_imei_blocked_date_yesterday_from_ftp.py",
-      "tipo": "imei"
+      "tipo": "imei",
+      "detalle": "Procesa archivos CSV  de los IMSI bloqueados que contengan como nombre le fecha_anterior y que se encuentren subidos en el FTP\tBloqueo masivo automatico recurrente en base a archivo SFTP\n"
     },
     {
       "descripcion": "Job Generar IMEI Desbloqueados Inicio hasta Dia Anterior desde FTP",
       "valor": "job_process_imei_unblocked_date_yesterday_from_ftp.py",
-      "tipo": "imei"
+      "tipo": "imei",
+      "detalle": "Procesa archivos CSV  de los IMSI desbloqueados que contengan como nombre le fecha_anterior y que se encuentren subidos en el FTP\tDesbloqueo masivo automatico recurrente en base a archivo SFTP"
     },
     {
       "descripcion": "Job Generar IMEI Bloqueados Solo 1 Dia",
       "valor": "job_process_imei_blocked_range_datetime.py",
-      "tipo": "imei"
+      "tipo": "imei",
+      "detalle": "Procesa data de IMSI bloqueados con un rango de fecha determinado, para el caso, solo el dia anterrior\tGenerar CSV con IMSIs bloqueados solo el dia anterior\n"
     },
     {
       "descripcion": "Job Generar IMEI Desbloqueados Solo 1 Dia",
       "valor": "job_process_imei_unblocked_range_datetime.py",
-      "tipo": "imei"
+      "tipo": "imei",
+      "detalle": "Procesa data de IMSI desbloqueados con un rango de fecha determinado, para el caso, solo el dia anterrior\tGenerar CSV con IMSIs desbloqueados solo el dia anterior"
     }
   ]
 }
