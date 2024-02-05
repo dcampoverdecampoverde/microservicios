@@ -16,3 +16,5 @@ router_task.register(prefix='actualizar_estado_task_job', basename='actualizar_e
                      viewset=ActualizarEstadoTaskJobViewSet)
 router_task.register(prefix='listado_parametros_target', basename='listado_parametros_target',
                      viewset=ConsultarListaParametrosTargetViewSet)
+router_task.register(prefix='eliminar_task_job', basename='eliminar_task_job',
+                     viewset=EliminarTaskJobViewSet)

@@ -1,5 +1,6 @@
 import datetime
 
+from django.db.models import Count
 from django.db.models import Q
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -348,15 +349,28 @@ class FunctionsListaNegra():
     def generarTopImsiTransaccionados(self):
         lista_resultados = []
 
+        total_insert = (
+            log_aprov_eir.objects.filter(accion='INSERT').values('imsi').annotate(dcount=Count('imsi')).order_by())
+
         lista_log = log_aprov_eir.objects.all().distinct('imsi')
         for item_log in lista_log:
             total_insert = 0
             total_query = 0
             total_delete = 0
             total_general = 0
-            total_insert = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='INSERT')).count()
+
+            # total_insert = (
+            #   log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='INSERT')).values('imsi').annotate(
+            #        dcount=Count('imsi')).order_by())
+            # total_query = (
+            #    log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='QUERY')).values('imsi').annotate(
+            #        dcount=Count('imsi')).order_by())
+            # total_delete = (
+            #    log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='DELETE')).values('imsi').annotate(
+            #        dcount=Count('imsi')).order_by())
             total_query = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='QUERY')).count()
             total_delete = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='DELETE')).count()
+            total_insert = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='INSERT')).count()
             total_general = total_insert + total_query + total_delete
             data_resultados = {
                 'imsi': item_log.imsi,

@@ -21,3 +21,4 @@ class programador_jobs(models.Model):
     terminal_modificacion = models.CharField(max_length=15, null=True)
     fecha_modificacion = models.DateTimeField(null=True)
     tipo = models.CharField(max_length=10, null=True, blank=True)
+    num_veces = models.IntegerField(null=True, blank=True)

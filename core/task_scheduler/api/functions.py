@@ -1,5 +1,6 @@
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+
 class FuncionesGenerales:
     def obtenerUsuarioSesionToken(self, request):
         JWT_authenticator = JWTAuthentication()
@@ -9,7 +10,8 @@ class FuncionesGenerales:
         usuario_id = token.payload["user_id"]
         data_response = {
             'username': usuario_descripcion,
-            'id': usuario_id
+            'id': usuario_id,
+            'superuser': user.is_superuser
         }
         return data_response
 
@@ -21,7 +23,6 @@ class FuncionesGenerales:
             ip_transaccion = request.META.get('REMOTE_ADDR')
 
         return ip_transaccion
-    
 
     def switchDiasSemana(self, valor):
         if valor == "0":
@@ -37,5 +38,4 @@ class FuncionesGenerales:
         if valor == "5":
             return "Sabado"
         if valor == "6":
-            return "Domingo"        
-
+            return "Domingo"

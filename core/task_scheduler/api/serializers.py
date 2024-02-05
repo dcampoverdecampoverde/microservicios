@@ -17,7 +17,8 @@ class TareaJobRegistroSerializer(serializers.ModelSerializer):
             'emails_notificacion',
             'tipo',
             'usuario_registro',
-            'terminal_registro'
+            'terminal_registro',
+            'num_veces'
         ]
 
 

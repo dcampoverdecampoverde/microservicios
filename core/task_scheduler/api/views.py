@@ -156,7 +156,8 @@ class RegistrarProgramadorTareaViewSet(ViewSet):
                 "emails_notificacion": info["emails_notificacion"],
                 "tipo": info["tipo_job"],
                 "usuario_registro": usuario_sesion["username"],
-                "terminal_registro": direccion_ip
+                "terminal_registro": direccion_ip,
+                "num_veces": 1
             }
             serializer = TareaJobRegistroSerializer(data=data_request)
             if serializer.is_valid(raise_exception=True):
@@ -437,3 +438,70 @@ class ConsultarListaParametrosTargetViewSet(ViewSet):
             return Response(status=status.HTTP_200_OK, data={"estado": "ok", "data": data_response})
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
+
+
+class EliminarTaskJobViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description='API para eliminar una tarea',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['id'],
+            properties={
+                'id': openapi.Schema(type=openapi.TYPE_STRING,
+                                     description="Id de la tarea"
+                                     )
+            }
+        ),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'data': openapi.Schema(type=openapi.TYPE_STRING),
+                    'status': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
+    def create(self, request, pk=None):
+        info = request.POST if request.POST else request.data if request.data else None
+        funciones = FuncionesGenerales()
+        try:
+            # usuario_sesion = funciones.obtenerUsuarioSesionToken(request)
+            data_user = funciones.obtenerUsuarioSesionToken(request)
+            if data_user["superuser"] == False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data="Solo el usuario que tien el rol de superuser puede eliminar una tarea.")
+
+            obj_task = programador_jobs.objects.get(id=info["id"])
+            if obj_task is None:
+                return Response(status=status.HTTP_400_BAD_REQUEST, data=f"No existe una tarea con el ID {info['id']}")
+            else:
+                if obj_task.estado_ejecucion == "running":
+                    return Response(status=status.HTTP_400_BAD_REQUEST,
+                                    data=f"La tarea se encuentra en ejecucion y no puede ser eliminada. Intente despues")
+
+                obj_task.estado = "E"
+                obj_task.usuario_modificacion = data_user["username"]
+                obj_task.terminal_modificacion = funciones.obtenerDireccionIpRemota(request)
+                obj_task.fecha_modificacion = datetime.datetime.now()
+                obj_task.save()
+                return Response(status=status.HTTP_200_OK, data="operacion correcta")
+
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=str(e))

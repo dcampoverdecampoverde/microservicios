@@ -115,7 +115,8 @@ DATABASES = {
         'PASSWORD': get_secret('DB_PASSWORD'),
         'HOST': '192.168.10.174',
         'PORT': '5432',
-        'CONN_MAX_AGE': None
+        'CONN_MAX_AGE': 0,
+        'CONN_HEALTH_CHECK': True
     }
 
     # ,
