@@ -1,6 +1,6 @@
 import datetime
 
-from django.db.models import Count
+from django.db import connection
 from django.db.models import Q
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -349,39 +349,73 @@ class FunctionsListaNegra():
     def generarTopImsiTransaccionados(self):
         lista_resultados = []
 
-        total_insert = (
-            log_aprov_eir.objects.filter(accion='INSERT').values('imsi').annotate(dcount=Count('imsi')).order_by())
+        # total_insert = (log_aprov_eir.objects.filter(accion='INSERT').values('imsi').annotate(dcount=Count('imsi')).order_by())
+        # query_groupby = log_aprov_eir.objects.values('imsi', 'accion', ).order_by('imsi').annotate(
+        #     count=Count('accion'))
+        # for item_log in query_groupby:
+        #     total_rows_insert = 0
+        #     total_rows_query = 0
+        #     total_rows_delete = 0
+        #     total_general = 0
+        #     total_query = None
+        #     total_delete = None
+        #     total_insert = None
+        #
+        #     total_query = query_groupby.filter(
+        #         Q(imsi=item_log['imsi']) & Q(accion='QUERY') & Q(accion=item_log['accion'])).values('count')
+        #     total_delete = query_groupby.filter(
+        #         Q(imsi=item_log['imsi']) & Q(accion='DELETE') & Q(accion=item_log['accion'])).values('count')
+        #     total_insert = query_groupby.filter(
+        #         Q(imsi=item_log['imsi']) & Q(accion='INSERT') & Q(accion=item_log['accion'])).values('count')
+        #
+        #     if total_query.count() > 0:
+        #         total_rows_query = total_query[0]["count"]
+        #
+        #     if total_delete.count() > 0:
+        #         total_rows_delete = total_delete[0]["count"]
+        #
+        #     if total_insert.count() > 0:
+        #         total_rows_insert = total_insert[0]["count"]
+        #
+        #     total_general = total_rows_insert + total_rows_query + total_rows_delete
+        #     data_resultados = {
+        #         'imsi': item_log['imsi'],
+        #         'total_insert': total_rows_insert,
+        #         'total_query': total_rows_query,
+        #         'total_delete': total_rows_delete,
+        #         'total_general': total_general
+        #     }
+        #     lista_resultados.append(data_resultados)
 
-        lista_log = log_aprov_eir.objects.all().distinct('imsi')
-        for item_log in lista_log:
-            total_insert = 0
-            total_query = 0
-            total_delete = 0
-            total_general = 0
+        # segunda alternativa
+        # lista_log = log_aprov_eir.objects.all().distinct('imsi')
+        # for item_log in lista_log:
+        #     total_insert = 0
+        #     total_query = 0
+        #     total_delete = 0
+        #     total_general = 0
+        #
+        #     total_query = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='QUERY')).count()
+        #     total_delete = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='DELETE')).count()
+        #     total_insert = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='INSERT')).count()
+        #     total_general = total_insert + total_query + total_delete
+        #     data_resultados = {
+        #         'imsi': item_log.imsi,
+        #         'total_insert': total_insert,
+        #         'total_query': total_query,
+        #         'total_delete': total_delete,
+        #         'total_general': total_general
+        #     }
+        #     lista_resultados.append(data_resultados)
 
-            # total_insert = (
-            #   log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='INSERT')).values('imsi').annotate(
-            #        dcount=Count('imsi')).order_by())
-            # total_query = (
-            #    log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='QUERY')).values('imsi').annotate(
-            #        dcount=Count('imsi')).order_by())
-            # total_delete = (
-            #    log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='DELETE')).values('imsi').annotate(
-            #        dcount=Count('imsi')).order_by())
-            total_query = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='QUERY')).count()
-            total_delete = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='DELETE')).count()
-            total_insert = log_aprov_eir.objects.filter(Q(imsi=item_log.imsi) & Q(accion='INSERT')).count()
-            total_general = total_insert + total_query + total_delete
-            data_resultados = {
-                'imsi': item_log.imsi,
-                'total_insert': total_insert,
-                'total_query': total_query,
-                'total_delete': total_delete,
-                'total_general': total_general
-            }
-            lista_resultados.append(data_resultados)
+        # Tercera alternativa
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM eir_catalog.top_10_imsi() order by 5 desc")
+            # cursor.execute("SELECT foo FROM bar WHERE baz = %s", [self.baz])
+            # row = cursor.fetchall()
+            columns = [col[0] for col in cursor.description]
+            listado = [dict(zip(columns, row)) for row in cursor.fetchall()]
 
-        lista_resultados_ordenada_desc = sorted(lista_resultados, key=lambda x: x['total_general'], reverse=True)[:10]
-        # lista_resultados_ordenada_desc = list(lista_resultados_ordenada_desc.items())[:10]
+        # lista_resultados_ordenada_desc = sorted(lista_resultados, key=lambda x: x['total_general'], reverse=True)[:10]
 
-        return lista_resultados_ordenada_desc
+        return listado

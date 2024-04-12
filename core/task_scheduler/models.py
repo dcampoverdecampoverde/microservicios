@@ -11,7 +11,7 @@ class programador_jobs(models.Model):
     horario_rango = models.CharField(max_length=50, null=True)
     job_descripcion = models.CharField(max_length=100, null=True)
     job_ejecutar = models.CharField(max_length=200, null=True)
-    emails_notificacion = models.CharField(max_length=500, null=True)
+    emails_notificacion = models.CharField(max_length=500, null=True, blank=True)
     fecha_ultima_ejecucion = models.DateTimeField(null=True)
     observaciones = models.CharField(max_length=500, null=True, blank=True)
     usuario_registro = models.CharField(max_length=20, null=True)

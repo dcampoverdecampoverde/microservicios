@@ -167,18 +167,6 @@ class ListaNegraRegistroViewSet(ViewSet):
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
 
-                """
-                Aqui se va a ingresar el nuevo IMSI en la base REPLIC      
-                Queda desactivado
-                                try:
-                    black_imsi.objects.using('replica').create(
-                        imsi=info['imsi'],
-                        source=info['source']
-                    )
-                except Exception as e1:
-                    log.error(f"Fallo la insercion IMSI con la base Replica: {str(e1)}")          
-                """
-
                 log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"],
                                 info["source"],
                                 "Ingreso Ok",
@@ -515,15 +503,6 @@ class ListaNegraEliminarViewSet(ViewSet):
             if value_validator_exists_imsi:
                 obj_listanegra = black_imsi.objects.get(pk=info["imsi"])
                 obj_listanegra.delete()
-                """
-                Aqui se elimina el registro que se encuentra en la base REPLICA
-                
-                """
-                try:
-                    obj_listanegra_replica = black_imsi.objects.using('replica').get(pk=info["imsi"])
-                    obj_listanegra_replica.delete()
-                except Exception as e:
-                    log.error(f"Fallo la eliminacion IMSI en la base Replica: {str(e)}")
 
                 log_imsi.grabar('DELETE', info["imsi"], None, None, info["reason"], info["source"],
                                 "Eliminacion Ok",

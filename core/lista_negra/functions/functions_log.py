@@ -18,26 +18,3 @@ class RegistroLog():
             ip_transaccion=ip_usuario_transaccion,
             usuario_descripcion=usuario_id
         )
-
-        # Aqui se crea el registro de REPLICA
-
-        # listado_imsi = black_imsi.objects.using('replica').all()
-        """
-        Queda desactivado
-        try:
-            log_aprov_eir.objects.using('replica').create(
-                estado="A",
-                accion=accion,
-                imsi=codigo_imsi,
-                operadora=operadora,
-                lista=lista,
-                razon=razon,
-                origen=origen,
-                descripcion=descripcion,
-                usuario_id_id=Usuario.objects.get(username=usuario_id).usuario_id,
-                ip_transaccion=ip_usuario_transaccion,
-                usuario_descripcion=usuario_id
-            )
-        except Exception as e:
-            log_file.error(f"Fallo la insercion LOGS con la base Replica: {str(e)}")
-        """

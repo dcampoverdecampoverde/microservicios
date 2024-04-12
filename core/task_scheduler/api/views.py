@@ -14,6 +14,14 @@ from task_scheduler.api.functions import FuncionesGenerales
 from task_scheduler.api.serializers import *
 
 
+# log.basicConfig(level=log.DEBUG,
+#                 format='%(asctime)s: %(levelname)s [%(filename)s:%(lineno)s] %(message)s',
+#                 handlers=[
+#                     log.FileHandler(apps.get_app_config('task_scheduler').path + r'/logs/log_api_task.log'),
+#                     log.StreamHandler()
+#                 ])
+
+
 class ConsultaListaJobsViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
@@ -132,7 +140,7 @@ class RegistrarProgramadorTareaViewSet(ViewSet):
         funciones = FuncionesGenerales()
         try:
             print(info)
-
+            # log.info(f"request registro_task: {str(info)}")
             # Obtengo el usuario que ha iniciado sesion
             usuario_sesion = funciones.obtenerUsuarioSesionToken(request)
 
