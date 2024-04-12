@@ -40,3 +40,5 @@ router_imei.register(prefix='consulta_todo_desbloqueados', basename='consulta_to
                      viewset=ConsultarDesBloquedosViewSet)
 router_imei.register(prefix='log_consulta_fechas', basename='log_consulta_fechas',
                      viewset=LogXFechasViewSet)
+router_imei.register(prefix='imeiblack_consulta_v2', basename='imeiblack_consulta_v2',
+                     viewset=ImeiBlackConsultaV2ViewSet)

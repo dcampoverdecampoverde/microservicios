@@ -408,6 +408,148 @@ class ImeiBlackConsultaViewSet(ViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
 
 
+class ImeiBlackConsultaV2ViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description='API para consultar version2 de IMEI registrado en lista negra',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['imei', 'source'],
+            properties={
+                'imsi': openapi.Schema(type=openapi.TYPE_NUMBER,
+                                       description="Codigo IMEI que se va a consultar",
+                                       example=123456789012345,
+                                       max_length=15),
+                'source': openapi.Schema(type=openapi.TYPE_STRING,
+                                         description="Se reciben los siguientes valores: {'api','front','bulk'}",
+                                         max_length=10)
+                # 'visit_at': openapi.Schema(type=openapi.TYPE_STRING,
+                #                           format=FORMAT_DATE)
+            }
+        ),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'imei': openapi.Schema(type=openapi.TYPE_STRING),
+                    'source': openapi.Schema(type=openapi.TYPE_STRING),
+                    'register': openapi.Schema(type=openapi.TYPE_STRING, format=FORMAT_DATE)
+                }
+            ),
+            400: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
+                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                }
+            ),
+            401: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'detail': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                }
+            )
+        }
+    )
+    def create(self, request):
+
+        log_imei = RegistroLog()
+        validator = ImeiRequestValidator()
+        metodos = FunctionsListaNegraImei()
+        info = request.POST if request.POST else request.data if request.data else None
+
+        try:
+
+            path = apps.get_app_config('lista_negra').path
+            config = open(path + r'/config/config.json')
+            data = json.load(config)
+            target_imei = data["target_imei"]
+            action_api_select = data["action_api_consultar"]
+
+            # registrando en log el request enviando
+            log.info(f"request consulta_imei: {str(info)}")
+
+            # Obtengo la sesion del usuario que esta conectado
+            data_user = metodos.obtenerUsuarioSesionToken(request)
+
+            # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imei,
+                                                                       action_api_select)
+            if usuario_accion_permitida is False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"status": "400, ERROR",
+                                      "message": "Su usuario no tiene permisos para acceder a esta accion : Consulta -> Imei"})
+
+            # Otengo la direccion remota
+            ip_transaccion = metodos.obtenerDireccionIpRemota(request)
+
+            # Evaluando los parametros recibidos:
+            estado_parametros = validator.validator_parameters(info, ['imei', 'source'])
+
+            if estado_parametros == False:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"status": "400, ERROR",
+                                      "message": "no se reconoce uno de los parametros enviados en la trama. Por favor revise la documentacion"})
+
+            # Evaluando que el codigo IMSI sea solo numeros
+            message_validator_request_onlynumber = validator.validator_onlynumber_imei(info['imei'])
+            if len(message_validator_request_onlynumber) > 0:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"status": "400, ERROR",
+                                      "message": message_validator_request_onlynumber})
+
+            # Validando valor origen
+            message_validator_request_origen = validator.validator_parameter_origen(info['source'])
+            if len(message_validator_request_origen) > 0:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"status": "400, ERROR",
+                                      "message": message_validator_request_origen})
+
+            # Validando longitud IMSI
+            message_validator_length_imsi = validator.validator_length_imei(info['imei'])
+            if len(message_validator_length_imsi) > 0:
+                # log_imsi.grabar('QUERY', info["imsi"], None, None, None, info["source"],
+                #                "error: " + message_validator_length_imsi,
+                #                data_user["username"], ip_transaccion)
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"status": "400, ERROR", "message": message_validator_length_imsi})
+
+            # Validando si existe o no el IMSI
+            value_validator_exists_imei = validator.validator_exists_imei(info['imei'])
+            if value_validator_exists_imei:
+                serializer_data_imsi = ImeiConsultarSerializer(black_gray_list.objects.filter(imei=info['imei']),
+                                                               many=True)
+                # data_response = {
+                #    "estado": "ok",
+                #    "mensaje": "ok",
+                #    "data": serializer_data_imsi.data,
+                # }
+                log_imei.grabar('QUERY', info["imei"], None, None, None, info["source"],
+                                "Consulta Ok",
+                                data_user["username"],
+                                ip_transaccion, log
+                                )
+                return Response(status=status.HTTP_200_OK, data=serializer_data_imsi.data)
+            else:
+                data_response = {
+                    "message": str(info["imei"]) + "-Imei NOT FOUND",
+                    "status": "117, ERROR",
+                }
+                return Response(status=status.HTTP_400_BAD_REQUEST, data=data_response)
+
+        except DatabaseError as e:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            data={"status": "500, ERROR", "message": str(e)})
+        except FileNotFoundError as e:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            data={"status": "500, ERROR", "mensaje": "archivo config.json no ha podido ser encontrado"})
+        except Exception as e1:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            data={"status": "500, ERROR", "message": str(e1)})
+
+
 class ImeiBlackEliminarViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
