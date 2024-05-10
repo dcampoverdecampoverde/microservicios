@@ -9,9 +9,11 @@ class ImeiRegistroSerializer(serializers.ModelSerializer):
         fields = (
             'imei',
             'list',
+            'last_imsi',
             'operator_code',
             'actvt_obs',
-            'code'
+            'code',
+            'source'
         )
 
 
@@ -26,6 +28,8 @@ class ImeiEliminarSerializer(serializers.ModelSerializer):
 
 
 class ImeiConsultarSerializer(serializers.ModelSerializer):
+    actvt_date = serializers.DateTimeField(format='%d/%m/%Y %H:%M:%S')
+
     class Meta:
         model = black_gray_list
         fields = [

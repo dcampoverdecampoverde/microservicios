@@ -11,6 +11,7 @@ class black_gray_list(models.Model):
     actvt_date = models.DateTimeField(auto_now_add=True, null=False)
     actvt_obs = models.CharField(max_length=255, null=True)
     code = models.SmallIntegerField(null=False, blank=True)
+    source = models.CharField(max_length=10, null=True, blank=True)
 
     class Meta:
         db_table = 'black_gray_list'

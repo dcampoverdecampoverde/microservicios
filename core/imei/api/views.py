@@ -32,21 +32,30 @@ class ImeiBlackRegistroViewSet(ViewSet):
         operation_description='API para registrar un IMEI en lista negra',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
-            required=['imei', 'telco', 'list', 'reason', 'source'],
+            required=['imei', 'operator_code', 'list', 'actvt_obs', 'code', 'source'],
             properties={
                 'imei': openapi.Schema(type=openapi.TYPE_NUMBER,
                                        description="Codigo IMEI que se va registrar",
                                        example=123456789012345,
                                        max_length=15),
-                'telco': openapi.Schema(type=openapi.TYPE_STRING,
-                                        description="Se reciben valores {'claro','telefonica','cnt','otros','masivo' }",
-                                        max_length=15),
                 'list': openapi.Schema(type=openapi.TYPE_STRING,
                                        description="Se reciben valores {'b'}",
                                        max_length=10),
-                'reason': openapi.Schema(type=openapi.TYPE_STRING,
-                                         description="Descripcion cual fue el motivo del bloqueo del codigo IMEI",
-                                         max_length=1000),
+                'last_imsi': openapi.Schema(type=openapi.TYPE_STRING,
+                                            description="",
+                                            max_length=10),
+                'operator_code': openapi.Schema(type=openapi.TYPE_STRING,
+                                                description="",
+                                                max_length=15),
+                'actvt_date': openapi.Schema(type=openapi.TYPE_STRING,
+                                             description="Fecha que realiza la transaccion. Este valor sera generado desde el servicio y no se tomara el valor recibido desde cualquier origen.",
+                                             max_length=15),
+                'actvt_obs': openapi.Schema(type=openapi.TYPE_STRING,
+                                            description="Descripcion cual fue el motivo del bloqueo del codigo IMEI",
+                                            max_length=1000),
+                'code': openapi.Schema(type=openapi.TYPE_STRING,
+                                       description="",
+                                       max_length=1000),
                 'source': openapi.Schema(type=openapi.TYPE_STRING,
                                          description="Origen de la transaccion, se reciben los siguientes valores: {'api','front','bulk'}",
                                          max_length=10)
@@ -58,15 +67,15 @@ class ImeiBlackRegistroViewSet(ViewSet):
             200: openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
-                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
-                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                    'message': openapi.Schema(type=openapi.TYPE_STRING),
+                    'status': openapi.Schema(type=openapi.TYPE_STRING)
                 }
             ),
             400: openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
-                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
-                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                    'message': openapi.Schema(type=openapi.TYPE_STRING),
+                    'status': openapi.Schema(type=openapi.TYPE_STRING)
                 }
             ),
             401: openapi.Schema(
@@ -103,29 +112,29 @@ class ImeiBlackRegistroViewSet(ViewSet):
                                                                        action_api_insert)
             if usuario_accion_permitida is False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error",
-                                      "mensaje": "Su usuario no tiene permisos para acceder a esta accion : Ingreso -> Imei"})
+                                data={"message": "user doesn't have permissions for execute Insert-> Imei",
+                                      "status": "400, Error -"})
 
                 # Validando valor origen
             message_validator_request_origen = validator.validator_parameter_list_check(info['list'])
             if len(message_validator_request_origen) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error",
-                                      "mensaje": message_validator_request_origen})
+                                data={"status": "400, Error -",
+                                      "message": message_validator_request_origen})
 
             # Evaluando Origen
             message_validator_request_origen = validator.validator_parameter_origen(info['source'])
             if len(message_validator_request_origen) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error",
-                                      "mensaje": message_validator_request_origen})
+                                data={"status": "400, Error -",
+                                      "message": message_validator_request_origen})
 
             # Evaluando Operadora
-            message_validator_request_operadora = validator.validator_parameter_operadora(info['telco'])
-            if len(message_validator_request_operadora) > 0:
-                return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error",
-                                      "mensaje": message_validator_request_operadora})
+            # message_validator_request_operadora = validator.validator_parameter_operadora(info['telco'])
+            # if len(message_validator_request_operadora) > 0:
+            #    return Response(status=status.HTTP_400_BAD_REQUEST,
+            #                    data={"estado": "error",
+            #                          "mensaje": message_validator_request_operadora})
             """
             # Evaluando los parametros recibidos:
             estado_parametros = validator.validator_parameters(info,
@@ -157,8 +166,8 @@ class ImeiBlackRegistroViewSet(ViewSet):
             message_validator_request_onlynumber = validator.validator_onlynumber_imei(info['imei'])
             if len(message_validator_request_onlynumber) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error",
-                                      "mensaje": message_validator_request_onlynumber})
+                                data={"status": "400, Error -",
+                                      "message": message_validator_request_onlynumber})
 
             # Evaluando longitud del codigo IMSI
             message_validator_length_imsi = validator.validator_length_imei(info['imei'])
@@ -167,28 +176,32 @@ class ImeiBlackRegistroViewSet(ViewSet):
                 #                "error: " + message_validator_length_imsi,
                 #                data_user["username"], ip_transaccion)
                 return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error", "mensaje": message_validator_length_imsi})
+                                data={"status": "400, Error -", "message": message_validator_length_imsi})
 
             data_request = {
                 "imei": info["imei"],
                 'list': info["list"],
-                'operator_code': info["telco"],
-                'actvt_obs': info["reason"],
-                'code': 11
+                'last_imsi': info["last_imsi"],
+                'operator_code': info["operator_code"],
+                'actvt_obs': info["actvt_obs"],
+                'code': info["code"],
+                'source': info["source"]
             }
             serializer = ImeiRegistroSerializer(data=data_request)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
 
-                log_imei.grabar('INSERT', info["imei"], info["telco"], info["list"], info["reason"],
+                log_imei.grabar('INSERT', info["imei"], info["operator_code"], info["list"], info["actvt_obs"],
                                 info["source"],
                                 "Ingreso Ok",
                                 data_user["username"],
                                 ip_transaccion, log
                                 )
-                return Response(status=status.HTTP_200_OK, data={"estado": "ok", "mensaje": "operacion correcta"})
+                return Response(status=status.HTTP_200_OK,
+                                data={"message": str(info["imei"]) + "-Table record sent successfully",
+                                      "status": "110, Ok -"})
             else:
-                log_imei.grabar('INSERT', info["imei"], info["telco"], info["list"], info["reason"],
+                log_imei.grabar('INSERT', info["imei"], info["operator_code"], info["list"], info["actvt_obs"],
                                 info["source"],
                                 serializer.errors,
                                 data_user["username"],
@@ -196,14 +209,15 @@ class ImeiBlackRegistroViewSet(ViewSet):
                                 )
                 return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
         except DatabaseError as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={"message": str(e), "status": "400, Error -"})
         except FileNotFoundError as e:
 
             return Response(status=status.HTTP_400_BAD_REQUEST,
-                            data={"estado": "error", "mensaje": "archivo config.json no ha podido ser encontrado"})
+                            data={"message": "config.json File Not Found",
+                                  "status": "400, Error -"})
         except Exception as e1:
-
-            return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e1)})
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"message": str(e1), "status": "500, Error -"})
 
 
 class ImeiBlackConsultaViewSet(ViewSet):
@@ -440,8 +454,8 @@ class ImeiBlackConsultaV2ViewSet(ViewSet):
             400: openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
-                    'estado': openapi.Schema(type=openapi.TYPE_STRING),
-                    'mensaje': openapi.Schema(type=openapi.TYPE_STRING)
+                    'status': openapi.Schema(type=openapi.TYPE_STRING),
+                    'message': openapi.Schema(type=openapi.TYPE_STRING)
                 }
             ),
             401: openapi.Schema(
