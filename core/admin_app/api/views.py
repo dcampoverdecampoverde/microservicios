@@ -2,20 +2,18 @@ from django.db.models import Q
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 from admin_app.api.functions import FuncionesAdminApp
 from admin_app.api.serializers import *
-from admin_app.functions.functionsAdmin import FunctionsAdminApp
 from admin_app.models import *
 
 
 # <editor-fold desc="Serializadores utilizados para los parametrizadores de RolesMenu y RolesMenuAccion">
 
 class RolesViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API que consulta tabla maestra de Roles',
@@ -44,7 +42,7 @@ class RolesViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -52,6 +50,18 @@ class RolesViewSet(ViewSet):
     def list(self, request):
         try:
             function = FuncionesAdminApp()
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = function.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             serializer = function.listaRoles()
             return Response(status=status.HTTP_200_OK, data=serializer.data)
         except Exception as e:
@@ -61,7 +71,7 @@ class RolesViewSet(ViewSet):
 
 
 class MenuOpcionViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API que consulta tabla maestra de Menu',
@@ -90,7 +100,7 @@ class MenuOpcionViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -98,6 +108,17 @@ class MenuOpcionViewSet(ViewSet):
     def list(self, request):
         function = FuncionesAdminApp()
         try:
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = function.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
 
             codigo_rol_seleccionado = request.GET.get("id")
             if codigo_rol_seleccionado is not None or 0:
@@ -122,7 +143,7 @@ class MenuOpcionViewSet(ViewSet):
 
 
 class AccionesViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API que consulta tabla maestra de Acciones',
@@ -151,7 +172,7 @@ class AccionesViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -159,6 +180,18 @@ class AccionesViewSet(ViewSet):
     def list(self, request):
         try:
             function = FuncionesAdminApp()
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = function.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             serializer = function.listaAcciones()
             return Response(status=status.HTTP_200_OK, data=serializer.data)
         except Exception as e:
@@ -171,7 +204,7 @@ class AccionesViewSet(ViewSet):
 
 # Esta consulta se utiliza para obtener el menu izquierdo que se visualiza en el front-end
 class RolesMenuUsuarioViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API que muestra el menu de opciones asignado segun su rol configurado',
@@ -198,21 +231,32 @@ class RolesMenuUsuarioViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
     )
     def create(self, request):
-        info = request.POST if request.POST else request.data if request.data else None
+        # info = request.POST if request.POST else request.data if request.data else None
         function = FuncionesAdminApp()
-        metodos = FunctionsAdminApp()
         try:
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = function.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             # Obtengo la sesion del usuario conectado
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             # buscando el rol del usuario
-            menu_opciones_usuario = function.consultaMenuOpciones(data_user["username"])
+            menu_opciones_usuario = function.consultaMenuOpciones(user_app)
             return Response(status=status.HTTP_200_OK, data=menu_opciones_usuario)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -221,7 +265,7 @@ class RolesMenuUsuarioViewSet(ViewSet):
 
 
 class RolesMenuViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API que consulta la cantidad de menu asignados por el Rol de Usuario',
@@ -248,7 +292,7 @@ class RolesMenuViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -256,6 +300,16 @@ class RolesMenuViewSet(ViewSet):
     def list(self, request):
         try:
             function = FuncionesAdminApp()
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = function.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
             data_response = function.consultarMenuXRolUsuario()
             return Response(status=status.HTTP_200_OK, data=data_response)
         except Exception as e:
@@ -298,7 +352,7 @@ class RolesMenuViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -307,7 +361,17 @@ class RolesMenuViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
         try:
             function = FuncionesAdminApp()
-            data_response = function.registrarRolMenu(info, request)
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = function.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+            data_response = function.registrarRolMenu(info, request, user_app)
             return Response(status=status.HTTP_200_OK, data=data_response)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -317,6 +381,18 @@ class RolesMenuViewSet(ViewSet):
     # @extend_schema(responses=RolesMenuActualizarSerializer)
     def partial_update(self, request, pk=None):
         info = request.POST if request.POST else request.data if request.data else None
+        function = FuncionesAdminApp()
+        # Aqui se obtiene mediante el header, el usuario y clave
+        user_app = request.headers.get('X-User')
+        password_app = request.headers.get('X-Pwd')
+
+        # Vaidacion del usuario y clave enviados por el header
+        message_validation_login = function.validarUsuarioClaveExisten(user_app, password_app)
+        if message_validation_login != "ok":
+            return Response(status=status.HTTP_401_UNAUTHORIZED,
+                            data={"status": "401, Error -",
+                                  "message": message_validation_login})
+
         obj_rolesmenuaccion = RolesMenu.objects.get(pk=pk)
         serializer = RolesMenuActualizarSerializer(obj_rolesmenuaccion, data=info, partial=True)
         if serializer.is_valid(raise_exception=True):
@@ -327,12 +403,24 @@ class RolesMenuViewSet(ViewSet):
 
 
 class MenuAsignadoViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def create(self, request):
         try:
             info = request.POST if request.POST else request.data if request.data else None
             function = FuncionesAdminApp()
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = function.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             data_response = function.listMenuXRol(info["rol"])
             return Response(status=status.HTTP_200_OK, data=data_response)
         except Exception as e:
@@ -342,16 +430,38 @@ class MenuAsignadoViewSet(ViewSet):
 
 
 class RolesMenuAccionViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     # @extend_schema(responses=RolesMenuAccionSerializer)
     def list(self, request):
+        function = FuncionesAdminApp()
+        # Aqui se obtiene mediante el header, el usuario y clave
+        user_app = request.headers.get('X-User')
+        password_app = request.headers.get('X-Pwd')
+
+        # Vaidacion del usuario y clave enviados por el header
+        message_validation_login = function.validarUsuarioClaveExisten(user_app, password_app)
+        if message_validation_login != "ok":
+            return Response(status=status.HTTP_401_UNAUTHORIZED,
+                            data={"status": "401, Error -",
+                                  "message": message_validation_login})
         serializer = RolesMenuAccionSerializer(RolesMenuAccion.objects.all(), many=True)
         return Response(status=status.HTTP_200_OK, data=serializer.data)
 
     # @extend_schema(responses=RolesMenuAccionRegistroSerializer)
     async def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
+        function = FuncionesAdminApp()
+        # Aqui se obtiene mediante el header, el usuario y clave
+        user_app = request.headers.get('X-User')
+        password_app = request.headers.get('X-Pwd')
+
+        # Vaidacion del usuario y clave enviados por el header
+        message_validation_login = function.validarUsuarioClaveExisten(user_app, password_app)
+        if message_validation_login != "ok":
+            return Response(status=status.HTTP_401_UNAUTHORIZED,
+                            data={"status": "401, Error -",
+                                  "message": message_validation_login})
         serializer = RolesMenuAccionRegistroSerializer(data=info)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
@@ -362,6 +472,18 @@ class RolesMenuAccionViewSet(ViewSet):
     # @extend_schema(responses=RolesMenuAccionActualizarSerializer)
     def partial_update(self, request, pk=None):
         info = request.POST if request.POST else request.data if request.data else None
+
+        function = FuncionesAdminApp()
+        # Aqui se obtiene mediante el header, el usuario y clave
+        user_app = request.headers.get('X-User')
+        password_app = request.headers.get('X-Pwd')
+
+        # Vaidacion del usuario y clave enviados por el header
+        message_validation_login = function.validarUsuarioClaveExisten(user_app, password_app)
+        if message_validation_login != "ok":
+            return Response(status=status.HTTP_401_UNAUTHORIZED,
+                            data={"status": "401, Error -",
+                                  "message": message_validation_login})
         obj_rolesmenu = RolesMenuAccion.objects.get(pk=pk)
         serializer = RolesMenuAccionActualizarSerializer(obj_rolesmenu, data=info, partial=True)
         if serializer.is_valid(raise_exception=True):
@@ -372,7 +494,7 @@ class RolesMenuAccionViewSet(ViewSet):
 
 
 class MenuOpcionPadreViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API que consulta tabla maestra de Menu Opciones Padre',
@@ -401,7 +523,7 @@ class MenuOpcionPadreViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -409,6 +531,16 @@ class MenuOpcionPadreViewSet(ViewSet):
     def list(self, request):
         try:
             function = FuncionesAdminApp()
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = function.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
             serializer = function.listaMenuOpcionPadre()
             return Response(status=status.HTTP_200_OK, data=serializer.data)
         except Exception as e:

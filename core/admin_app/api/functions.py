@@ -1,3 +1,4 @@
+from django.contrib.auth.hashers import check_password
 from django.db.models import Q
 
 from admin_app.api.serializers import *
@@ -6,6 +7,26 @@ from users_system.models import Usuario
 
 
 class FuncionesAdminApp():
+
+    def validarUsuarioClaveExisten(self, user, pwd):
+        if user is None or pwd is None:
+            return "No se han encontrado los parametros (X-User y/o X-pwd) valor autentificarse"
+
+        if user.strip() == '':
+            return "El parametro X-User no tiene valor"
+
+        if pwd.strip() == '':
+            return "El parametro X-Pwd no tiene valor"
+
+        data_usuario = Usuario.objects.filter(username=user).first()
+        if data_usuario is None:
+            return "Usuario no se encontro registrado en el sistema"
+        else:
+            if check_password(pwd, data_usuario.password):
+                return "ok"
+            else:
+                return "Clave ingresada es invalida"
+
     def listaRoles(self):
         serializer = RolesSerializer(Roles.objects.all(), many=True)
         return serializer
@@ -72,11 +93,11 @@ class FuncionesAdminApp():
 
         return data_response
 
-    def registrarRolMenu(self, request_data, request):
+    def registrarRolMenu(self, request_data, request, user_app):
 
         metodos = FunctionsAdminApp()
         # obtengo la info del usuario conectado
-        data_user = metodos.obtenerUsuarioSesionToken(request)
+        # data_user = metodos.obtenerUsuarioSesionToken(request)
 
         # obtengo la direccion ip remota
         ip_transaccion = metodos.obtenerDireccionIpRemota(request)
@@ -94,7 +115,7 @@ class FuncionesAdminApp():
                     'rol_descripcion': obj_rol.descripcion,
                     'menu_id': item["menu_id"],
                     'menu_descripcion': obj_menu.descripcion,
-                    'usuario_creacion': data_user["username"],
+                    'usuario_creacion': user_app,
                     'ip_creacion': ip_transaccion
                 }
             serializer = RolesMenuRegistroSerializer(data=data_menu)

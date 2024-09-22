@@ -1,3 +1,4 @@
+from django.contrib.auth.hashers import check_password
 from django.db import connection
 from django.db.models import Q
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -5,6 +6,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from imei.api.serializers import *
 from imei.models import *
 from lista_negra.models import user_api_actions
+from users_system.models import Usuario
 
 
 class FunctionsListaNegraImei():
@@ -19,6 +21,26 @@ class FunctionsListaNegraImei():
             'id': usuario_id
         }
         return data_response
+
+    # Se agrega nuevo metodo de validacion para verificar si el usuario y clave existen en la base:
+    def validarUsuarioClaveExisten(self, user, pwd):
+        if user is None or pwd is None:
+            return "No se han encontrado los parametros (X-User y/o X-pwd) valor autentificarse"
+
+        if user.strip() == '':
+            return "El parametro X-User no tiene valor"
+
+        if pwd.strip() == '':
+            return "El parametro X-Pwd no tiene valor"
+
+        data_usuario = Usuario.objects.filter(username=user).first()
+        if data_usuario is None:
+            return "Usuario no se encontro registrado en el sistema"
+        else:
+            if check_password(pwd, data_usuario.password):
+                return "ok"
+            else:
+                return "Clave ingresada es invalida"
 
     def obtenerDireccionIpRemota(self, request):
         user_ip = request.META.get('HTTP_X_FORWARDED_FOR')

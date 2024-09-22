@@ -10,7 +10,6 @@ from drf_yasg import openapi
 from drf_yasg.openapi import FORMAT_DATE
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
@@ -29,7 +28,7 @@ log.basicConfig(level=log.DEBUG,
 
 
 class ListaNegraRegistroViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para registrar un IMSI en lista negra',
@@ -76,7 +75,7 @@ class ListaNegraRegistroViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -91,6 +90,17 @@ class ListaNegraRegistroViewSet(ViewSet):
             # registrando en log el request enviando
             log.info(f"request registro_imsi: {str(info)}")
 
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             path = apps.get_app_config('lista_negra').path
             config = open(path + r'/config/config.json')
             data = json.load(config)
@@ -98,10 +108,10 @@ class ListaNegraRegistroViewSet(ViewSet):
             action_api_insert = data["action_api_registrar"]
 
             # Obtengo la sesion del usuario que esta conectado
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
-            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imsi,
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(user_app, target_imsi,
                                                                        action_api_insert)
             if usuario_accion_permitida is False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -170,7 +180,7 @@ class ListaNegraRegistroViewSet(ViewSet):
                 log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"],
                                 info["source"],
                                 "Ingreso Ok",
-                                data_user["username"],
+                                user_app,
                                 ip_transaccion, log
                                 )
                 return Response(status=status.HTTP_200_OK, data={"estado": "ok", "mensaje": "operacion correcta"})
@@ -178,7 +188,7 @@ class ListaNegraRegistroViewSet(ViewSet):
                 log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"],
                                 info["source"],
                                 serializer.errors,
-                                data_user["username"],
+                                user_app,
                                 ip_transaccion, log
                                 )
                 return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
@@ -196,7 +206,7 @@ class ListaNegraRegistroViewSet(ViewSet):
 
 
 class ListaNegraConsultaViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consultar IMSI registrado en lista negra',
@@ -235,7 +245,7 @@ class ListaNegraConsultaViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -253,6 +263,17 @@ class ListaNegraConsultaViewSet(ViewSet):
             # registrando en log el request enviando
             log.info(f"request consulta_imsi: {str(info)}")
 
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             path = apps.get_app_config('lista_negra').path
             config = open(path + r'/config/config.json')
             data = json.load(config)
@@ -260,10 +281,10 @@ class ListaNegraConsultaViewSet(ViewSet):
             action_api_select = data["action_api_consultar"]
 
             # Obtengo la sesion del usuario que esta conectado
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
-            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imsi,
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(user_app, target_imsi,
                                                                        action_api_select)
             if usuario_accion_permitida is False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -315,7 +336,7 @@ class ListaNegraConsultaViewSet(ViewSet):
                 }
                 log_imsi.grabar('QUERY', info["imsi"], None, None, None, info["source"],
                                 "Consulta Ok",
-                                data_user["username"],
+                                user_app,
                                 ip_transaccion, log
                                 )
                 return Response(status=status.HTTP_200_OK, data=data_response)
@@ -365,7 +386,7 @@ class ListaNegraConsultaViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -373,6 +394,16 @@ class ListaNegraConsultaViewSet(ViewSet):
     def list(self, request):
         metodos = FunctionsListaNegra()
         try:
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
             # serializer_data_imsi = ListaNegraSerializer(black_imsi.objects.all(), many=True)
             data_lista_negra = metodos.generarListaNegraTotal()
             return Response(status=status.HTTP_200_OK, data=data_lista_negra)
@@ -381,7 +412,7 @@ class ListaNegraConsultaViewSet(ViewSet):
 
 
 class ListaNegraEliminarViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para eliminar IMSI registrado en lista negra',
@@ -422,7 +453,7 @@ class ListaNegraEliminarViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -438,6 +469,17 @@ class ListaNegraEliminarViewSet(ViewSet):
             # registrando en log el request enviando
             log.info(f"request eliminar_imsi: {str(info)}")
 
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             path = apps.get_app_config('lista_negra').path
             config = open(path + r'/config/config.json')
             data = json.load(config)
@@ -445,10 +487,10 @@ class ListaNegraEliminarViewSet(ViewSet):
             action_api_delete = data["action_api_eliminar"]
 
             # Obtengo la sesion del usuario que esta conectado
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
-            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imsi,
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(user_app, target_imsi,
                                                                        action_api_delete)
             if usuario_accion_permitida is False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -506,7 +548,7 @@ class ListaNegraEliminarViewSet(ViewSet):
 
                 log_imsi.grabar('DELETE', info["imsi"], None, None, info["reason"], info["source"],
                                 "Eliminacion Ok",
-                                data_user["username"],
+                                user_app,
                                 ip_transaccion, log
                                 )
                 data_response = {
@@ -528,7 +570,7 @@ class ListaNegraEliminarViewSet(ViewSet):
 
 
 class LogXUsuarioViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consulta de los primeros 100 LOGS mas recientes realizados por la sesion del usuario conectado',
@@ -577,21 +619,31 @@ class LogXUsuarioViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
     )
     def list(self, request):
-        validator = ValidatorListaNegra()
         metodos = FunctionsListaNegra()
         try:
 
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             # Obtengo la sesion del usuario que esta conectado
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             serializer_log = LogSerializer(
-                log_aprov_eir.objects.filter(usuario_descripcion=data_user['username']).order_by('-fecha_bitacora')[
+                log_aprov_eir.objects.filter(usuario_descripcion=user_app).order_by('-fecha_bitacora')[
                 0:100],
                 many=True)
             return Response(status=status.HTTP_200_OK, data=serializer_log.data)
@@ -600,7 +652,7 @@ class LogXUsuarioViewSet(ViewSet):
 
 
 class LogXIMSIViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consulta de todos los LOGS de un codigo IMSI ingresado',
@@ -659,15 +711,27 @@ class LogXIMSIViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
     )
     def create(self, request):
         validator = ValidatorListaNegra()
+        metodos = FunctionsListaNegra()
         try:
             info = request.POST if request.POST else request.data if request.data else None
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
 
             # Evaluando longitud del codigo IMSI
             message_validator_length_imsi = validator.validator_length_imsi(info['imsi'])
@@ -691,7 +755,7 @@ class LogXIMSIViewSet(ViewSet):
 
 
 class LogXFechasViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consulta de todos los LOGS por un rango de fecha determinado',
@@ -752,14 +816,26 @@ class LogXFechasViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
     )
     def create(self, request):
+        metodos = FunctionsListaNegra()
         try:
             info = request.POST if request.POST else request.data if request.data else None
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
 
             serializer_log = LogSerializer(
                 log_aprov_eir.objects.filter(Q(fecha_bitacora__date__range=[info['fecha_desde'], info['fecha_hasta']])),
@@ -770,7 +846,7 @@ class LogXFechasViewSet(ViewSet):
 
 
 class ParametrosOperadoraView(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para obtener el listado de valores de Operadora',
@@ -796,7 +872,7 @@ class ParametrosOperadoraView(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -816,7 +892,7 @@ class ParametrosOperadoraView(ViewSet):
 
 
 class ParametrosRutaFtpView(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para obtener la ruta FTP configurada en el archivo config.json',
@@ -842,7 +918,7 @@ class ParametrosRutaFtpView(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -868,7 +944,7 @@ class ParametrosRutaFtpView(ViewSet):
 
 
 class ArchivoMasivoViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para obtener el listado de archivos masivos registrados desde UI',
@@ -939,13 +1015,24 @@ class ArchivoMasivoViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
     )
     def list(self, request):
+        metodos = FunctionsListaNegra()
         try:
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
             serializer = FileProcessSerializer(
                 files_process_bulk.objects.all().order_by('-fecha_archivo_procesando'),
                 many=True)
@@ -994,7 +1081,7 @@ class ArchivoMasivoViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1007,8 +1094,19 @@ class ArchivoMasivoViewSet(ViewSet):
             # registrando en log el request enviando
             log.info(f"request registro_imsi_masivo: {str(info)}")
 
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             # Obtengo la sesion del usuario conectado
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
@@ -1022,7 +1120,7 @@ class ArchivoMasivoViewSet(ViewSet):
             data_request = {
                 'estado': 'pendiente',
                 'archivo_csv': info['nombre_archivo_csv'],
-                'usuario_registro': data_user['username'],
+                'usuario_registro': user_app,
                 'accion': info['accion'],
                 'ip_registro': ip_transaccion
             }
@@ -1096,7 +1194,7 @@ class ArchivoMasivoViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1108,12 +1206,23 @@ class ArchivoMasivoViewSet(ViewSet):
             # registrando en log el request enviando
             log.info(f"request actualizacion_imsi_masivo: {str(info)}")
 
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             # Obtengo la sesion del usuario conectado
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             # aqui se obtiene la direccion IP remota
             info["ip_actualizacion"] = metodos.obtenerDireccionIpRemota(request)
-            info["usuario_actualizacion"] = data_user["username"]
+            info["usuario_actualizacion"] = user_app
 
             obj_fileprocessbulk = files_process_bulk.objects.get(pk=pk)
             serializer = FileProcessActualizarSerializer(obj_fileprocessbulk, data=info, partial=True)
@@ -1131,7 +1240,7 @@ class ArchivoMasivoViewSet(ViewSet):
 
 
 class ReporteBloqueadoViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para generar archivo CSV de todos los IMSI bloqueados en un rango de tiempo definido',
@@ -1164,7 +1273,7 @@ class ReporteBloqueadoViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1174,6 +1283,17 @@ class ReporteBloqueadoViewSet(ViewSet):
         try:
             funcion = FunctionsListaNegra()
             valores_data = funcion.generarReporteBloqueados(info)
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
 
             # file_download = open(ruta_archivo, 'r')
             # response = HttpResponse(file_download, content_type='text/csv')
@@ -1209,7 +1329,7 @@ class ReporteBloqueadoViewSet(ViewSet):
 
 
 class ReporteDesbloqueadoViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para generar archivo CSV de todos los IMSI desbloqueados',
@@ -1242,7 +1362,7 @@ class ReporteDesbloqueadoViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1252,6 +1372,17 @@ class ReporteDesbloqueadoViewSet(ViewSet):
         try:
             funcion = FunctionsListaNegra()
             valores_data = funcion.generarReporteDesbloqueados(info)
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
 
             # file_download = open(ruta_archivo, 'r')
             # response = HttpResponse(file_download, content_type='text/csv')
@@ -1287,7 +1418,7 @@ class ReporteDesbloqueadoViewSet(ViewSet):
 
 
 class ReporteGeneralLogViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para generar un Sumario General Resumido',
@@ -1311,7 +1442,7 @@ class ReporteGeneralLogViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1319,6 +1450,17 @@ class ReporteGeneralLogViewSet(ViewSet):
     def list(self, request):
         funcion = FunctionsListaNegra()
         try:
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             data = funcion.generarSumario()
             return Response(data={"estado": "ok", "mensaje": data}, status=status.HTTP_200_OK)
         except Exception as e:
@@ -1355,7 +1497,7 @@ class ReporteGeneralLogViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1365,6 +1507,18 @@ class ReporteGeneralLogViewSet(ViewSet):
         try:
             funcion = FunctionsListaNegra()
             valores_data = funcion.generarReporteGeneralLog(info)
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             response = HttpResponse(
                 content_type='text/csv',
             )
@@ -1396,7 +1550,7 @@ class ReporteGeneralLogViewSet(ViewSet):
 
 
 class ReporteSumarioDetalladoView(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para generar archivo CSV um sumario detallado de todos los IMSI registrados en un rango de tiempo definido',
@@ -1429,7 +1583,7 @@ class ReporteSumarioDetalladoView(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1438,6 +1592,18 @@ class ReporteSumarioDetalladoView(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
         try:
             funcion = FunctionsListaNegra()
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             valores_data = funcion.generarSumarioDetallado(info)
 
             # ordenamiento
@@ -1470,7 +1636,7 @@ class ReporteSumarioDetalladoView(ViewSet):
 
 
 class ConsultarTDRViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consultar TDR',
@@ -1511,13 +1677,25 @@ class ConsultarTDRViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
     )
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
+        metodos = FunctionsListaNegra()
+        # Aqui se obtiene mediante el header, el usuario y clave
+        user_app = request.headers.get('X-User')
+        password_app = request.headers.get('X-Pwd')
+
+        # Vaidacion del usuario y clave enviados por el header
+        message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+        if message_validation_login != "ok":
+            return Response(status=status.HTTP_401_UNAUTHORIZED,
+                            data={"status": "401, Error -",
+                                  "message": message_validation_login})
+
         # obtengo los parametros enviados en el request:
         codigo_imsi = info['imsi']
         codigo_imei = info['imei']
@@ -1527,8 +1705,7 @@ class ConsultarTDRViewSet(ViewSet):
         if len(fecha_desde.strip()) == 0 or len(fecha_hasta.strip()) == 0:
             return Response(data='Los campos de fecha son obligatorios', status=status.HTTP_400_BAD_REQUEST)
 
-        funcion = FunctionsListaNegra()
-        data_response = funcion.consultarTdr(codigo_imsi, codigo_imei, fecha_desde, fecha_hasta)
+        data_response = metodos.consultarTdr(codigo_imsi, codigo_imei, fecha_desde, fecha_hasta)
         if data_response["estado"] == "ok":
             return Response(data=data_response, status=status.HTTP_200_OK)
         else:
@@ -1536,7 +1713,7 @@ class ConsultarTDRViewSet(ViewSet):
 
 
 class ReporteTDRViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para generar archivo CSV del TDR',
@@ -1575,14 +1752,26 @@ class ReporteTDRViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
     )
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
+        funcion = FunctionsListaNegra()
         try:
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             codigo_imsi = info['imsi']
             codigo_imei = info['imei']
             fecha_desde = info['fecha_desde']
@@ -1591,7 +1780,6 @@ class ReporteTDRViewSet(ViewSet):
             if len(fecha_desde.strip()) == 0 or len(fecha_hasta.strip()) == 0:
                 return Response(data='Los campos de fecha son obligatorios', status=status.HTTP_400_BAD_REQUEST)
 
-            funcion = FunctionsListaNegra()
             data_response = funcion.consultarTdr(codigo_imsi, codigo_imei, fecha_desde, fecha_hasta)
             if data_response["estado"] == "ok":
 
@@ -1626,7 +1814,7 @@ class ReporteTDRViewSet(ViewSet):
 
 
 class ConsultarDesBloquedosViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consultar todos los IMSI Desbloqueados',
@@ -1649,7 +1837,7 @@ class ConsultarDesBloquedosViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1657,6 +1845,17 @@ class ConsultarDesBloquedosViewSet(ViewSet):
     def list(self, request):
         funcion = FunctionsListaNegra()
         try:
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             data_response = funcion.generarListaNegraDesbloqueadosTotal()
             return Response(data=data_response, status=status.HTTP_200_OK)
         except Exception as e:
@@ -1664,7 +1863,7 @@ class ConsultarDesBloquedosViewSet(ViewSet):
 
 
 class ListaUsuariosApiActionsViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consultar usuarios con las acciones de Api parametrizadas',
@@ -1687,7 +1886,7 @@ class ListaUsuariosApiActionsViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1695,6 +1894,18 @@ class ListaUsuariosApiActionsViewSet(ViewSet):
     def list(self, request):
         funcion = FunctionsListaNegra()
         try:
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             data_response = funcion.listaAccionApiUsuarios()
             return Response(data=data_response, status=status.HTTP_200_OK)
         except Exception as e:
@@ -1702,7 +1913,7 @@ class ListaUsuariosApiActionsViewSet(ViewSet):
 
 
 class UsuariosApiActionsViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para registrar usuarios con las acciones de Api',
@@ -1742,7 +1953,7 @@ class UsuariosApiActionsViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1751,6 +1962,17 @@ class UsuariosApiActionsViewSet(ViewSet):
         funcion = FunctionsListaNegra()
         info = request.POST if request.POST else request.data if request.data else None
         try:
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             # Otengo la direccion remota
             ip_transaccion = funcion.obtenerDireccionIpRemota(request)
             data_response = funcion.registrarAccionApiUsuarios(info, ip_transaccion)
@@ -1760,7 +1982,7 @@ class UsuariosApiActionsViewSet(ViewSet):
 
 
 class UsuariosModificarApiActionsViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para registrar usuarios con las acciones de Api',
@@ -1795,7 +2017,7 @@ class UsuariosModificarApiActionsViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1804,6 +2026,18 @@ class UsuariosModificarApiActionsViewSet(ViewSet):
         funcion = FunctionsListaNegra()
         info = request.POST if request.POST else request.data if request.data else None
         try:
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             # Otengo la direccion remota
             ip_transaccion = funcion.obtenerDireccionIpRemota(request)
             data_response = funcion.modificarAccionApiUsuarios(info, ip_transaccion)
@@ -1836,7 +2070,7 @@ class TopImsiFrequentlyViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1844,6 +2078,18 @@ class TopImsiFrequentlyViewSet(ViewSet):
     def list(self, request):
         funcion = FunctionsListaNegra()
         try:
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             data = funcion.generarTopImsiTransaccionados()
             return Response(data={"estado": "ok", "data": data}, status=status.HTTP_200_OK)
         except Exception as e:
@@ -1881,7 +2127,7 @@ class ServiceCheckHeathViewSet(ViewSet):
 
 
 class ConsultaImsiBloqueadoXFechaViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consultar todos los IMSI bloqueados en un rango de fecha',
@@ -1916,7 +2162,7 @@ class ConsultaImsiBloqueadoXFechaViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1925,6 +2171,18 @@ class ConsultaImsiBloqueadoXFechaViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
         try:
             funcion = FunctionsListaNegra()
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             valores_data = funcion.generarReporteBloqueados(info)
 
             lista_data_imsi = []
@@ -1949,7 +2207,7 @@ class ConsultaImsiBloqueadoXFechaViewSet(ViewSet):
 
 
 class ConsultaImsiDesBloqueadoXFechaViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consultar todos los IMSI desbloqueados en un rango de fecha',
@@ -1984,7 +2242,7 @@ class ConsultaImsiDesBloqueadoXFechaViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1993,6 +2251,18 @@ class ConsultaImsiDesBloqueadoXFechaViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
         try:
             funcion = FunctionsListaNegra()
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             valores_data = funcion.generarReporteDesbloqueados(info)
 
             # file_download = open(ruta_archivo, 'r')

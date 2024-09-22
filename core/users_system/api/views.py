@@ -3,7 +3,6 @@ import datetime
 from django.contrib.auth import password_validation
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -13,16 +12,53 @@ from users_system.functions.functions_usuarios import FunctionsUsuario
 from users_system.models import Usuario
 
 
+class LoginViewSet(APIView):
+
+    def post(self, request):
+        metodos = FunctionsUsuario()
+        try:
+            info = request.POST if request.POST else request.data if request.data else None
+            # Aqui se obtiene mediante el header, el usuario y clave
+            # user_app = request.headers.get('X-User')
+            # password_app = request.headers.get('X-Pwd')
+
+            user_app = info['username']
+            password_app = info['password']
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+            else:
+                return Response(status=status.HTTP_200_OK,
+                                data={"status": "200, Ok -",
+                                      "message": "Usuario autentificado correctamente"})
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=str(e))
+
+
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def post(self, request):
         metodos = FunctionsUsuario()
         try:
             # Obtengo la informacion del usaurio q inicio sesion
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
 
-            usuario_sesion = Usuario.objects.get(username=data_user["username"])
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
+            usuario_sesion = Usuario.objects.get(username=user_app)
             token = RefreshToken.for_user(usuario_sesion)
             token.blacklist()
             # info = request.POST if request.POST else request.data if request.data else None
@@ -35,10 +71,22 @@ class LogoutView(APIView):
 
 
 class RegistroUsuarioView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        metodos = FunctionsUsuario()
         try:
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             serializer = UsuarioRegistroSerializer(data=request.data)
             response = {
                 "estado": "ok",
@@ -58,15 +106,26 @@ class RegistroUsuarioView(APIView):
 
 
 class UsuarioActualizaView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def post(self, request):
         metodos = FunctionsUsuario()
         try:
             info = request.POST if request.POST else request.data if request.data else None
 
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             # Obtengo la informacion del usaurio q inicio sesion
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             # Obtengo la direccion IP remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
@@ -78,7 +137,7 @@ class UsuarioActualizaView(APIView):
                 'email': info['email'],
                 'rol_descripcion': info['rol_descripcion'],
                 'fecha_modificacion': datetime.datetime.now(),
-                'usuario_modificacion': data_user['username'],
+                'usuario_modificacion': user_app,
                 'ip_modificacion': ip_transaccion
 
             }
@@ -94,22 +153,46 @@ class UsuarioActualizaView(APIView):
 
 
 class UsuarioView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        metodos = FunctionsUsuario()
+        # Aqui se obtiene mediante el header, el usuario y clave
+        user_app = request.headers.get('X-User')
+        password_app = request.headers.get('X-Pwd')
+
+        # Vaidacion del usuario y clave enviados por el header
+        message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+        if message_validation_login != "ok":
+            return Response(status=status.HTTP_401_UNAUTHORIZED,
+                            data={"status": "401, Error -",
+                                  "message": message_validation_login})
+
+        # request.headers.get('password')
         serializer = UsuarioSerializer(Usuario.objects.all(), many=True)  # request.user
         return Response(serializer.data)
 
 
 class ChangePasswordView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def post(self, request):
         metodos = FunctionsUsuario()
         info = request.POST if request.POST else request.data if request.data else None
         try:
             # Obtengo la informacion del usaurio q inicio sesion
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
 
             # Aqui se obtiene la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
@@ -119,7 +202,7 @@ class ChangePasswordView(APIView):
 
             if validacion_clave is None:
                 object_user.fecha_modificacion = datetime.datetime.now()
-                object_user.usuario_modificacion = data_user["username"]
+                object_user.usuario_modificacion = user_app
                 object_user.ip_modificacion = ip_transaccion
                 object_user.set_password(info["nueva_clave"])
                 object_user.save()
@@ -178,8 +261,7 @@ class ChangePasswordView(APIView):
 
 
 class ValidarSessionView(APIView):
-    permission_classes = [IsAuthenticated]
-
+    # permission_classes = [IsAuthenticated]
     def get(self, request):
         data_response = {
             "estado_sesion": 'ok'

@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 import json
 import os
-from datetime import timedelta
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
@@ -178,11 +177,12 @@ REST_FRAMEWORK = {
     )
 }
 
-SIMPLE_JWT = {
-    'USER_ID_FIELD': 'usuario_id',
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    'AUTH_HEADER_TYPES': ('Bearer',)
-}
+# Lineas que permitian usar el swagger con token
+# SIMPLE_JWT = {
+#    'USER_ID_FIELD': 'usuario_id',
+#    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+#    'AUTH_HEADER_TYPES': ('Bearer',)
+# }
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
@@ -195,17 +195,20 @@ STATIC_ROOT = './static/'
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_HEADERS = ['*']
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users_system.Usuario'
 
-SWAGGER_SETTINGS = {
-    'SECURITY_DEFINITIONS': {
-        'token_access': {
-            'type': 'apiKey',
-            'in': 'header',
-            'name': 'Authorization'
-        }
-    },
-}
+# Lineas que permitian usar el swagger con token
+# SWAGGER_SETTINGS = {
+#    'SECURITY_DEFINITIONS': {
+#        'token_access': {
+#            'type': 'apiKey',
+#            'in': 'header',
+#            'name': 'Authorization'
+#        }
+#    },
+# }

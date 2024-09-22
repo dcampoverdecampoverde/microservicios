@@ -8,7 +8,6 @@ from drf_yasg import openapi
 from drf_yasg.openapi import FORMAT_DATE
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
@@ -26,7 +25,7 @@ log.basicConfig(level=log.DEBUG,
 
 
 class ImeiBlackRegistroViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para registrar un IMEI en lista negra',
@@ -82,7 +81,7 @@ class ImeiBlackRegistroViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -94,11 +93,22 @@ class ImeiBlackRegistroViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
 
         try:
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             # registrando en log el request enviando
             log.info(f"request registro_imei: {str(info)}")
 
             # Obtengo la sesion del usuario que esta conectado
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
@@ -108,7 +118,7 @@ class ImeiBlackRegistroViewSet(ViewSet):
             data = json.load(config)
             target_imei = data["target_imei"]
             action_api_insert = data["action_api_registrar"]
-            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imei,
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(user_app, target_imei,
                                                                        action_api_insert)
             if usuario_accion_permitida is False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -194,7 +204,7 @@ class ImeiBlackRegistroViewSet(ViewSet):
                 log_imei.grabar('INSERT', info["imei"], info["operator_code"], info["list"], info["actvt_obs"],
                                 info["source"],
                                 "Ingreso Ok",
-                                data_user["username"],
+                                user_app,
                                 ip_transaccion, log
                                 )
                 return Response(status=status.HTTP_200_OK,
@@ -204,7 +214,7 @@ class ImeiBlackRegistroViewSet(ViewSet):
                 log_imei.grabar('INSERT', info["imei"], info["operator_code"], info["list"], info["actvt_obs"],
                                 info["source"],
                                 serializer.errors,
-                                data_user["username"],
+                                user_app,
                                 ip_transaccion, log
                                 )
                 return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
@@ -221,7 +231,7 @@ class ImeiBlackRegistroViewSet(ViewSet):
 
 
 class ImeiBlackConsultaViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consultar IMEI registrado en lista negra',
@@ -260,7 +270,7 @@ class ImeiBlackConsultaViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -274,6 +284,17 @@ class ImeiBlackConsultaViewSet(ViewSet):
 
         try:
 
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             path = apps.get_app_config('lista_negra').path
             config = open(path + r'/config/config.json')
             data = json.load(config)
@@ -284,10 +305,10 @@ class ImeiBlackConsultaViewSet(ViewSet):
             log.info(f"request consulta_imei: {str(info)}")
 
             # Obtengo la sesion del usuario que esta conectado
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
-            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imei,
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(user_app, target_imei,
                                                                        action_api_select)
             if usuario_accion_permitida is False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -340,7 +361,7 @@ class ImeiBlackConsultaViewSet(ViewSet):
                 }
                 log_imei.grabar('QUERY', info["imei"], None, None, None, info["source"],
                                 "Consulta Ok",
-                                data_user["username"],
+                                user_app,
                                 ip_transaccion, log
                                 )
                 return Response(status=status.HTTP_200_OK, data=data_response)
@@ -390,7 +411,7 @@ class ImeiBlackConsultaViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -398,6 +419,17 @@ class ImeiBlackConsultaViewSet(ViewSet):
     def list(self, request):
         metodos = FunctionsListaNegraImei()
         try:
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             path = apps.get_app_config('lista_negra').path
             config = open(path + r'/config/config.json')
             data = json.load(config)
@@ -405,10 +437,10 @@ class ImeiBlackConsultaViewSet(ViewSet):
             action_api_select = data["action_api_consultar"]
 
             # Obtengo la sesion del usuario que esta conectado
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
-            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imei,
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(user_app, target_imei,
                                                                        action_api_select)
             if usuario_accion_permitida is False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -423,7 +455,7 @@ class ImeiBlackConsultaViewSet(ViewSet):
 
 
 class ImeiBlackConsultaV2ViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consultar version2 de IMEI registrado en lista negra',
@@ -462,7 +494,7 @@ class ImeiBlackConsultaV2ViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -476,6 +508,17 @@ class ImeiBlackConsultaV2ViewSet(ViewSet):
 
         try:
 
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             path = apps.get_app_config('lista_negra').path
             config = open(path + r'/config/config.json')
             data = json.load(config)
@@ -486,10 +529,10 @@ class ImeiBlackConsultaV2ViewSet(ViewSet):
             log.info(f"request consulta_imei: {str(info)}")
 
             # Obtengo la sesion del usuario que esta conectado
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
-            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imei,
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(user_app, target_imei,
                                                                        action_api_select)
             if usuario_accion_permitida is False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -542,7 +585,7 @@ class ImeiBlackConsultaV2ViewSet(ViewSet):
                 # }
                 log_imei.grabar('QUERY', info["imei"], None, None, None, info["source"],
                                 "Consulta Ok",
-                                data_user["username"],
+                                user_app,
                                 ip_transaccion, log
                                 )
                 return Response(status=status.HTTP_200_OK, data=serializer_data_imsi.data)
@@ -565,7 +608,7 @@ class ImeiBlackConsultaV2ViewSet(ViewSet):
 
 
 class ImeiBlackEliminarViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para eliminar IMEI registrado en lista negra',
@@ -606,7 +649,7 @@ class ImeiBlackEliminarViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -619,6 +662,17 @@ class ImeiBlackEliminarViewSet(ViewSet):
 
         try:
 
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             path = apps.get_app_config('lista_negra').path
             config = open(path + r'/config/config.json')
             data = json.load(config)
@@ -629,10 +683,10 @@ class ImeiBlackEliminarViewSet(ViewSet):
             log.info(f"request eliminar_imei: {str(info)}")
 
             # Obtengo la sesion del usuario que esta conectado
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             # Aqui se valida si el usuario que inicio sesion, tiene acceso a esta accion y endpoint
-            usuario_accion_permitida = metodos.validarAccionApiUsuario(data_user["username"], target_imei,
+            usuario_accion_permitida = metodos.validarAccionApiUsuario(user_app, target_imei,
                                                                        action_api_delete)
             if usuario_accion_permitida is False:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -685,7 +739,7 @@ class ImeiBlackEliminarViewSet(ViewSet):
 
                 log_imei.grabar('DELETE', info["imei"], None, None, info["reason"], info["source"],
                                 "Eliminacion Ok",
-                                data_user["username"],
+                                user_app,
                                 ip_transaccion, log
                                 )
                 data_response = {
@@ -707,7 +761,7 @@ class ImeiBlackEliminarViewSet(ViewSet):
 
 
 class LogXUsuarioViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consulta de los primeros 100 LOGS mas recientes realizados por la sesion del usuario conectado',
@@ -756,7 +810,7 @@ class LogXUsuarioViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -764,12 +818,22 @@ class LogXUsuarioViewSet(ViewSet):
     def list(self, request):
         metodos = FunctionsListaNegraImei()
         try:
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
 
             # Obtengo la sesion del usuario que esta conectado
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             serializer_log = LogImeiSerializer(
-                log_imei_eir.objects.filter(usuario_descripcion=data_user['username']).order_by('-fecha_bitacora')[
+                log_imei_eir.objects.filter(usuario_descripcion=user_app).order_by('-fecha_bitacora')[
                 0:100],
                 many=True)
             return Response(status=status.HTTP_200_OK, data=serializer_log.data)
@@ -778,7 +842,7 @@ class LogXUsuarioViewSet(ViewSet):
 
 
 class ImeiBlackMasivoViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para obtener el listado de archivos masivos registrados',
@@ -846,13 +910,24 @@ class ImeiBlackMasivoViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
     )
     def list(self, request):
+        metodos = FunctionsListaNegraImei()
         try:
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
             serializer = ImeiMasivoSerializer(
                 files_imei_bulk.objects.all().order_by('-fecha_archivo_procesando'),
                 many=True)
@@ -898,7 +973,7 @@ class ImeiBlackMasivoViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -909,11 +984,23 @@ class ImeiBlackMasivoViewSet(ViewSet):
         validator = ImeiRequestValidator()
         info = request.POST if request.POST else request.data if request.data else None
         try:
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             # registrando en log el request enviando
             log.info(f"request registro_imei_masivo: {str(info)}")
 
             # Obtengo la sesion del usuario conectado
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             # Otengo la direccion remota
             ip_transaccion = metodos.obtenerDireccionIpRemota(request)
@@ -927,7 +1014,7 @@ class ImeiBlackMasivoViewSet(ViewSet):
             data_request = {
                 'estado': 'pendiente',
                 'archivo_csv': info['nombre_archivo_csv'],
-                'usuario_registro': data_user['username'],
+                'usuario_registro': user_app,
                 'ip_registro': ip_transaccion,
                 'accion': info['accion']
             }
@@ -1001,7 +1088,7 @@ class ImeiBlackMasivoViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1010,15 +1097,27 @@ class ImeiBlackMasivoViewSet(ViewSet):
         metodos = FunctionsListaNegraImei()
         info = request.POST if request.POST else request.data if request.data else None
         try:
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             # registrando en log el request enviando
             log.info(f"request actualizacion_imei_masivo: {str(info)}")
 
             # Obtengo la sesion del usuario conectado
-            data_user = metodos.obtenerUsuarioSesionToken(request)
+            # data_user = metodos.obtenerUsuarioSesionToken(request)
 
             # aqui se obtiene la direccion IP remota
             info["ip_actualizacion"] = metodos.obtenerDireccionIpRemota(request)
-            info["usuario_actualizacion"] = data_user["username"]
+            info["usuario_actualizacion"] = user_app
 
             obj_fileprocessbulk = files_imei_bulk.objects.get(pk=pk)
             serializer = ImeiMasivoActualizarSerializer(obj_fileprocessbulk, data=info, partial=True)
@@ -1036,7 +1135,7 @@ class ImeiBlackMasivoViewSet(ViewSet):
 
 
 class ImeiBlackReporteBloqueadoViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para generar archivo CSV de todos los IMEI bloqueados',
@@ -1069,14 +1168,26 @@ class ImeiBlackReporteBloqueadoViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
     )
     def create(self, request):
+        metodos = FunctionsListaNegraImei()
         info = request.POST if request.POST else request.data if request.data else None
         try:
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             funcion = FunctionsListaNegraImei()
             valores_data = funcion.generarReporteBloqueados(info)
 
@@ -1114,7 +1225,7 @@ class ImeiBlackReporteBloqueadoViewSet(ViewSet):
 
 
 class ImeiBlackReporteDesbloqueadoViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para generar archivo CSV de todos los IMEI desbloqueados',
@@ -1147,16 +1258,28 @@ class ImeiBlackReporteDesbloqueadoViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
     )
     def create(self, request):
         info = request.POST if request.POST else request.data if request.data else None
+        metodos = FunctionsListaNegraImei()
         try:
             funcion = FunctionsListaNegraImei()
             valores_data = funcion.generarReporteDesbloqueados(info)
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = metodos.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
 
             # file_download = open(ruta_archivo, 'r')
             # response = HttpResponse(file_download, content_type='text/csv')
@@ -1192,7 +1315,7 @@ class ImeiBlackReporteDesbloqueadoViewSet(ViewSet):
 
 
 class ImeiBlackReporteGeneralLogViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para generar Sumario General Resumido de los IMEI Bloqueados y Desbloqueados',
@@ -1216,7 +1339,7 @@ class ImeiBlackReporteGeneralLogViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1260,7 +1383,7 @@ class ImeiBlackReporteGeneralLogViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1269,6 +1392,18 @@ class ImeiBlackReporteGeneralLogViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
         try:
             funcion = FunctionsListaNegraImei()
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             valores_data = funcion.generarReporteGeneralLog(info)
             response = HttpResponse(
                 content_type='text/csv',
@@ -1301,7 +1436,7 @@ class ImeiBlackReporteGeneralLogViewSet(ViewSet):
 
 
 class LogXImeiViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consulta de todos los LOGS de un codigo IMEI ingresado',
@@ -1360,15 +1495,27 @@ class LogXImeiViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
     )
     def create(self, request):
         validator = ImeiRequestValidator()
+        funcion = FunctionsListaNegraImei()
         try:
             info = request.POST if request.POST else request.data if request.data else None
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
 
             # Evaluando longitud del codigo IMEI
             message_validator_length_imsi = validator.validator_length_imei(info['imei'])
@@ -1423,7 +1570,7 @@ class TopImeiFrequentlyViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1431,6 +1578,17 @@ class TopImeiFrequentlyViewSet(ViewSet):
     def list(self, request):
         funcion = FunctionsListaNegraImei()
         try:
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             data = funcion.generarTopImeiTransaccionados()
             return Response(data={"estado": "ok", "data": data}, status=status.HTTP_200_OK)
         except Exception as e:
@@ -1438,7 +1596,7 @@ class TopImeiFrequentlyViewSet(ViewSet):
 
 
 class ReporteSumarioDetalladoView(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para generar archivo CSV um sumario detallado de todos los IMEI registrados',
@@ -1471,7 +1629,7 @@ class ReporteSumarioDetalladoView(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1480,6 +1638,18 @@ class ReporteSumarioDetalladoView(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
         try:
             funcion = FunctionsListaNegraImei()
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             valores_data = funcion.generarSumarioDetallado(info)
 
             # ordenamiento
@@ -1512,7 +1682,7 @@ class ReporteSumarioDetalladoView(ViewSet):
 
 
 class ConsultaImeiBloqueadoXFechaViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consultar todos los IMEI bloqueados en un rango de fecha',
@@ -1545,7 +1715,7 @@ class ConsultaImeiBloqueadoXFechaViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1554,6 +1724,18 @@ class ConsultaImeiBloqueadoXFechaViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
         try:
             funcion = FunctionsListaNegraImei()
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             valores_data = funcion.generarReporteBloqueados(info)
 
             lista_data_imei = []
@@ -1578,7 +1760,7 @@ class ConsultaImeiBloqueadoXFechaViewSet(ViewSet):
 
 
 class ConsultaImeiDesBloqueadoXFechaViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consultar todos los IMEI desbloqueados en un rango de fecha',
@@ -1611,7 +1793,7 @@ class ConsultaImeiDesBloqueadoXFechaViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1620,6 +1802,18 @@ class ConsultaImeiDesBloqueadoXFechaViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
         try:
             funcion = FunctionsListaNegraImei()
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             valores_data = funcion.generarReporteDesbloqueados(info)
 
             # file_download = open(ruta_archivo, 'r')
@@ -1657,7 +1851,7 @@ class ConsultaImeiDesBloqueadoXFechaViewSet(ViewSet):
 
 
 class ConsultarDesBloquedosViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consultar todos los IMEI desbloqueados',
@@ -1678,7 +1872,7 @@ class ConsultarDesBloquedosViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1686,6 +1880,18 @@ class ConsultarDesBloquedosViewSet(ViewSet):
     def list(self, request):
         funcion = FunctionsListaNegraImei()
         try:
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             data_response = funcion.generarListaNegraDesbloqueadosTotal()
             return Response(data=data_response, status=status.HTTP_200_OK)
         except Exception as e:
@@ -1693,7 +1899,7 @@ class ConsultarDesBloquedosViewSet(ViewSet):
 
 
 class LogXFechasViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consulta de todos los LOGS por un rango de fecha determinado',
@@ -1754,7 +1960,7 @@ class LogXFechasViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -1762,6 +1968,18 @@ class LogXFechasViewSet(ViewSet):
     def create(self, request):
         try:
             info = request.POST if request.POST else request.data if request.data else None
+            funcion = FunctionsListaNegraImei()
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
 
             serializer_log = LogImeiSerializer(
                 log_imei_eir.objects.filter(Q(fecha_bitacora__date__range=[info['fecha_desde'], info['fecha_hasta']])),

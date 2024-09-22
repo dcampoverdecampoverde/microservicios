@@ -6,7 +6,6 @@ from drf_yasg import openapi
 from drf_yasg.openapi import FORMAT_DATE
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
@@ -23,7 +22,7 @@ from task_scheduler.api.serializers import *
 
 
 class ConsultaListaJobsViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para mostrar listado de jobs existentes en el sistema',
@@ -46,7 +45,7 @@ class ConsultaListaJobsViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -70,7 +69,7 @@ class ConsultaListaJobsViewSet(ViewSet):
 
 
 class RegistrarProgramadorTareaViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para actualizar estado de un registro del proceso masivo IMEI Bulk',
@@ -130,7 +129,7 @@ class RegistrarProgramadorTareaViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -139,10 +138,21 @@ class RegistrarProgramadorTareaViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
         funciones = FuncionesGenerales()
         try:
-            print(info)
+            # print(info)
             # log.info(f"request registro_task: {str(info)}")
             # Obtengo el usuario que ha iniciado sesion
-            usuario_sesion = funciones.obtenerUsuarioSesionToken(request)
+            # usuario_sesion = funciones.obtenerUsuarioSesionToken(request)
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funciones.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
 
             # Obtengo la direccion ip de donde se hace la peticion
             direccion_ip = funciones.obtenerDireccionIpRemota(request)
@@ -163,7 +173,7 @@ class RegistrarProgramadorTareaViewSet(ViewSet):
                 "job_descripcion": info["job_descripcion"],
                 "emails_notificacion": info["emails_notificacion"],
                 "tipo": info["tipo_job"],
-                "usuario_registro": usuario_sesion["username"],
+                "usuario_registro": user_app,
                 "terminal_registro": direccion_ip,
                 "num_veces": 1
             }
@@ -177,7 +187,7 @@ class RegistrarProgramadorTareaViewSet(ViewSet):
 
 
 class ConsultarListadoTaskJobViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # spermission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consultar Listado Tareas registradas',
@@ -200,7 +210,7 @@ class ConsultarListadoTaskJobViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -208,6 +218,16 @@ class ConsultarListadoTaskJobViewSet(ViewSet):
     def list(self, request):
         funciones = FuncionesGenerales()
         try:
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funciones.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
 
             serializer = TareaJobListaSerializer(programador_jobs.objects.all(), many=True)
             data_task = serializer.data
@@ -255,7 +275,7 @@ class ConsultarListadoTaskJobViewSet(ViewSet):
 
 
 class ActualizarTaskJobViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para actualizar Tarea Progamada',
@@ -307,7 +327,7 @@ class ActualizarTaskJobViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -316,13 +336,24 @@ class ActualizarTaskJobViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
         funciones = FuncionesGenerales()
         try:
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funciones.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
             # usuario_sesion = funciones.obtenerUsuarioSesionToken(request)
-            data_user = funciones.obtenerUsuarioSesionToken(request)
+            # data_user = funciones.obtenerUsuarioSesionToken(request)
             obj_task = programador_jobs.objects.get(id=info["id"])
             if obj_task is None:
                 return Response(status=status.HTTP_400_BAD_REQUEST, data=f"No existe una tarea con el ID {info['id']}")
             else:
-                info["usuario_modificacion"] = data_user["username"]
+                info["usuario_modificacion"] = user_app
                 info["terminal_modificacion"] = funciones.obtenerDireccionIpRemota(request)
                 info["fecha_modificacion"] = datetime.datetime.now()
 
@@ -339,7 +370,7 @@ class ActualizarTaskJobViewSet(ViewSet):
 
 
 class ActualizarEstadoTaskJobViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para actualizar estado de ejecucion de tarea',
@@ -379,7 +410,7 @@ class ActualizarEstadoTaskJobViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -388,14 +419,26 @@ class ActualizarEstadoTaskJobViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
         funciones = FuncionesGenerales()
         try:
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funciones.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
             # usuario_sesion = funciones.obtenerUsuarioSesionToken(request)
-            data_user = funciones.obtenerUsuarioSesionToken(request)
+            # data_user = funciones.obtenerUsuarioSesionToken(request)
             obj_task = programador_jobs.objects.get(id=info["id"])
             if obj_task is None:
                 return Response(status=status.HTTP_400_BAD_REQUEST, data=f"No existe una tarea con el ID {info['id']}")
             else:
                 obj_task.estado_ejecucion = info["estado_ejecucion"]
-                obj_task.usuario_modificacion = data_user["username"]
+                obj_task.usuario_modificacion = user_app
                 obj_task.terminal_modificacion = funciones.obtenerDireccionIpRemota(request)
                 obj_task.fecha_modificacion = info["fecha_modificacion"]
                 if info["fecha_ultima_ejecucion"] is not None:
@@ -408,7 +451,7 @@ class ActualizarEstadoTaskJobViewSet(ViewSet):
 
 
 class ConsultarListaParametrosTargetViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para consultar Listado Parametros Target',
@@ -431,7 +474,7 @@ class ConsultarListaParametrosTargetViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -449,7 +492,7 @@ class ConsultarListaParametrosTargetViewSet(ViewSet):
 
 
 class EliminarTaskJobViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_description='API para eliminar una tarea',
@@ -481,7 +524,7 @@ class EliminarTaskJobViewSet(ViewSet):
                 type=openapi.TYPE_OBJECT,
                 properties={
                     'detail': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description="Se notifica si no tiene acceso o si el token de acceso, expiro")
+                                             description="Credenciales usuario incorrectas")
                 }
             )
         }
@@ -490,11 +533,22 @@ class EliminarTaskJobViewSet(ViewSet):
         info = request.POST if request.POST else request.data if request.data else None
         funciones = FuncionesGenerales()
         try:
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funciones.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
             # usuario_sesion = funciones.obtenerUsuarioSesionToken(request)
-            data_user = funciones.obtenerUsuarioSesionToken(request)
-            if data_user["superuser"] == False:
-                return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data="Solo el usuario que tien el rol de superuser puede eliminar una tarea.")
+            # data_user = funciones.obtenerUsuarioSesionToken(request)
+            # if data_user["superuser"] == False:
+            #    return Response(status=status.HTTP_400_BAD_REQUEST,
+            #                    data="Solo el usuario que tien el rol de superuser puede eliminar una tarea.")
 
             obj_task = programador_jobs.objects.get(id=info["id"])
             if obj_task is None:
@@ -505,7 +559,7 @@ class EliminarTaskJobViewSet(ViewSet):
                                     data=f"La tarea se encuentra en ejecucion y no puede ser eliminada. Intente despues")
 
                 obj_task.estado = "E"
-                obj_task.usuario_modificacion = data_user["username"]
+                obj_task.usuario_modificacion = user_app
                 obj_task.terminal_modificacion = funciones.obtenerDireccionIpRemota(request)
                 obj_task.fecha_modificacion = datetime.datetime.now()
                 obj_task.save()
