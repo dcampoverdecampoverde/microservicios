@@ -542,6 +542,7 @@ class MenuOpcionPadreViewSet(ViewSet):
                                 data={"status": "401, Error -",
                                       "message": message_validation_login})
             serializer = function.listaMenuOpcionPadre()
+            listado = serializer.data
             return Response(status=status.HTTP_200_OK, data=serializer.data)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST,

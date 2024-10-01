@@ -58,3 +58,11 @@ class files_imei_bulk(models.Model):
 
     class Meta:
         db_table = 'files_imei_bulk'
+
+
+class operator(models.Model):
+    operator_code = models.CharField(primary_key=True, max_length=15, null=False)
+    operator_name = models.CharField(max_length=64, blank=True, null=True)
+
+    class Meta:
+        db_table = 'operator'

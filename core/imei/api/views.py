@@ -33,7 +33,7 @@ class ImeiBlackRegistroViewSet(ViewSet):
             type=openapi.TYPE_OBJECT,
             required=['imei', 'operator_code', 'list', 'actvt_obs', 'code', 'source'],
             properties={
-                'imei': openapi.Schema(type=openapi.TYPE_NUMBER,
+                'imei': openapi.Schema(type=openapi.TYPE_STRING,
                                        description="Codigo IMEI que se va registrar",
                                        example=123456789012345,
                                        max_length=15),
@@ -45,7 +45,7 @@ class ImeiBlackRegistroViewSet(ViewSet):
                                             max_length=10),
                 'operator_code': openapi.Schema(type=openapi.TYPE_STRING,
                                                 description="",
-                                                max_length=15),
+                                                max_length=25),
                 'actvt_date': openapi.Schema(type=openapi.TYPE_STRING,
                                              description="Fecha que realiza la transaccion. Este valor sera generado desde el servicio y no se tomara el valor recibido desde cualquier origen.",
                                              max_length=15),
@@ -139,47 +139,21 @@ class ImeiBlackRegistroViewSet(ViewSet):
                                 data={"status": "400, Error -",
                                       "message": message_validator_request_origen})
 
-            # Evaluando Operadora
-            # message_validator_request_operadora = validator.validator_parameter_operadora(info['telco'])
-            # if len(message_validator_request_operadora) > 0:
-            #    return Response(status=status.HTTP_400_BAD_REQUEST,
-            #                    data={"estado": "error",
-            #                          "mensaje": message_validator_request_operadora})
-            """
-            # Evaluando los parametros recibidos:
-            estado_parametros = validator.validator_parameters(info,
-                                                               ['imei', 'telco', 'reason', 'list', 'source'])
-
-            if estado_parametros == False:
+            # Evaluando Operador_Code
+            message_validator_request_operadora = validator.validator_parameter_operadora(info['operator_code'])
+            if len(message_validator_request_operadora) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error",
-                                      "mensaje": "no se reconoce uno de los parametros enviados en la trama. Por favor revise la documentacion"})
-            """
+                                data={"estado": "400. Error -",
+                                      "mensaje": message_validator_request_operadora})
 
-            # Evaluando que el valor reason tenga un valor
-            """
-            if len(info["reason"].strip()) <= 0:
-                return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error",
-                                      "mensaje": "falta ingresar un motivo"})
-            """
-
-            # Evaluando Lista
-            """
-            message_validator_request_lista = validator.validator_parameter_lista(info['list'])
-            if len(message_validator_request_lista) > 0:
-                return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={"estado": "error",
-                                      "mensaje": message_validator_request_lista})
-            """
-            # Evaluando que el codigo IMSI sea solo numeros
+            # Evaluando que el codigo IMEI sea solo numeros
             message_validator_request_onlynumber = validator.validator_onlynumber_imei(info['imei'])
             if len(message_validator_request_onlynumber) > 0:
                 return Response(status=status.HTTP_400_BAD_REQUEST,
                                 data={"status": "400, Error -",
                                       "message": message_validator_request_onlynumber})
 
-            # Evaluando longitud del codigo IMSI
+            # Evaluando longitud del codigo IMEI
             message_validator_length_imsi = validator.validator_length_imei(info['imei'])
             if len(message_validator_length_imsi) > 0:
                 # log_imsi.grabar('INSERT', info["imsi"], info["telco"], info["list"], info["reason"], info["source"],
@@ -836,7 +810,17 @@ class LogXUsuarioViewSet(ViewSet):
                 log_imei_eir.objects.filter(usuario_descripcion=user_app).order_by('-fecha_bitacora')[
                 0:100],
                 many=True)
-            return Response(status=status.HTTP_200_OK, data=serializer_log.data)
+            # modifoco el serializer para obtener el nombre del operator
+            data_imei = serializer_log.data
+            for imei in data_imei:
+                # valido si el operador existe en la tabla para recuperar su descripion
+                if imei["operadora"] is not None:
+                    if len(imei["operadora"]) > 0:
+                        oper = operator.objects.filter(operator_code=imei["operadora"]).first()
+                        if oper is not None:
+                            imei["operadora"] = oper.operator_name
+
+            return Response(status=status.HTTP_200_OK, data=data_imei)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
 
@@ -1533,7 +1517,18 @@ class LogXImeiViewSet(ViewSet):
             serializer_log = LogImeiSerializer(
                 log_imei_eir.objects.filter(imei=info['imei']).order_by('-fecha_bitacora'),
                 many=True)
-            return Response(status=status.HTTP_200_OK, data=serializer_log.data)
+
+            # modifoco el serializer para obtener el nombre del operator
+            data_imei = serializer_log.data
+            for imei in data_imei:
+                # valido si el operador existe en la tabla para recuperar su descripion
+                if imei["operadora"] is not None:
+                    if len(imei["operadora"]) > 0:
+                        oper = operator.objects.filter(operator_code=imei["operadora"]).first()
+                        if oper is not None:
+                            imei["operadora"] = oper.operator_name
+
+            return Response(status=status.HTTP_200_OK, data=data_imei)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
 
@@ -1987,3 +1982,110 @@ class LogXFechasViewSet(ViewSet):
             return Response(status=status.HTTP_200_OK, data=serializer_log.data)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"estado": "error", "mensaje": str(e)})
+
+
+class OperatorCodeRegistroViewSet(ViewSet):
+    def create(self, request):
+        try:
+            info = request.POST if request.POST else request.data if request.data else None
+            funcion = FunctionsListaNegraImei()
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
+            data_request = {
+                'operator_code': info["operator_code"],
+                'operator_name': info["operator_name"],
+            }
+
+            message_validation_exists_operator = funcion.validarOperatorCodeExists(info["operator_code"])
+            if len(message_validation_exists_operator) > 0:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"status": "400, Error -",
+                                      "message": message_validation_exists_operator, "estado": "ok"})
+
+            serializer = OperatorCodeRegistroSerializer(data=data_request)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+            return Response(status=status.HTTP_200_OK,
+                            data={"message": "Table record sent successfully",
+                                  "status": "110, Ok -", "estado": "ok"})
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={"message": str(e), "status": "400, Error -", "estado": "error"})
+
+
+class OperatorCodeConsultaViewSet(ViewSet):
+    def list(self, request):
+        funcion = FunctionsListaNegraImei()
+        try:
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
+            serializer = OperatorCodeConsultaSerializer(
+                operator.objects.all(), many=True)
+
+            return Response(data={"estado": "ok", "mensaje": "Operacion Correcta", "data": serializer.data},
+                            status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(data={"estado": "error", "mensaje": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class OperatorCodeActualizarViewSet(ViewSet):
+    def create(self, request):
+        try:
+            info = request.POST if request.POST else request.data if request.data else None
+            funcion = FunctionsListaNegraImei()
+
+            # Aqui se obtiene mediante el header, el usuario y clave
+            user_app = request.headers.get('X-User')
+            password_app = request.headers.get('X-Pwd')
+
+            # Vaidacion del usuario y clave enviados por el header
+            message_validation_login = funcion.validarUsuarioClaveExisten(user_app, password_app)
+            if message_validation_login != "ok":
+                return Response(status=status.HTTP_401_UNAUTHORIZED,
+                                data={"status": "401, Error -",
+                                      "message": message_validation_login})
+
+            data_request = {
+                'operator_code': info["operator_code"],
+                'operator_name': info["operator_name"],
+            }
+
+            message_validation_exists_operator = funcion.validarOperatorCodeExists(info["operator_code"])
+            if len(message_validation_exists_operator) > 0:
+                obj_update = operator.objects.get(pk=info["operator_code"])
+                serializer = OperatorCodeActualizarSerializer(obj_update, data=info, partial=True)
+                if serializer.is_valid(raise_exception=True):
+                    serializer.save()
+                return Response(status=status.HTTP_200_OK,
+                                data={"message": "Table record sent successfully",
+                                      "status": "110, Ok -", "estado": "ok"})
+            else:
+                return Response(status=status.HTTP_400_BAD_REQUEST,
+                                data={"status": "400, Error -",
+                                      "estado": "error",
+                                      "message": "El parametro {operator_code} con valor = " + info[
+                                          "operator_code"] + " no se encuentra registrado"})
+
+
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={"message": str(e), "status": "400, Error -", "estado": "error"})

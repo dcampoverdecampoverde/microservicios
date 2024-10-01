@@ -289,3 +289,10 @@ class FunctionsListaNegraImei():
             accion_permitida = True
 
         return accion_permitida
+
+    def validarOperatorCodeExists(self, code):
+        data_operator = operator.objects.filter(operator_code=code).first()
+        if data_operator is None:
+            return ""
+        else:
+            return "El codigo {" + code + "} ya se encuentra registrado"

@@ -8,16 +8,8 @@ from imei.models import *
 class ImeiRequestValidator():
     def validator_parameter_operadora(self, request_operadora):
         mensaje_return = ""
-        # Se hace una validacion de los parametros lista, operadora y origen
-        # para verificar si se esta recibiendo los calores que corresponden
-        # segun lo definido en el config.json
-        path = apps.get_app_config('lista_negra').path
-        config = open(path + r'/config/config.json')
-        data = json.load(config)
-        # Evaluando Origen
-        existe_origen = list(filter(lambda x: x["valor"] == request_operadora, data["valores_operadora"]))
-        if len(existe_origen) <= 0:
-            mensaje_return = "El parametro {operadora} tiene un valor que no es reconocible en la configuracion de los posibles valores que puede recibir. Revisar la documentacion"
+        if not operator.objects.filter(operator_code=request_operadora).exists():
+            mensaje_return = "El parametro {operator_code} con valor (" + request_operadora + ") no se encuentra registrado en listado de operadores validos"
 
         return mensaje_return
 

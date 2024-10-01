@@ -106,13 +106,13 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'eirecudb',
+        'NAME': 'eirdb',
         'OPTIONS': {
             'options': '-c search_path=eir_catalog'
         },
-        'USER': 'eir_usr_ecu',
-        'PASSWORD': get_secret('DB_PASSWORD'),
-        'HOST': '192.168.10.174',
+        'USER': 'postgres',
+        'PASSWORD': 'password',  # get_secret('DB_PASSWORD'),
+        'HOST': 'localhost',
         'PORT': '5432',
         'CONN_MAX_AGE': 0,
         'CONN_HEALTH_CHECK': True

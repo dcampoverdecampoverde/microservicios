@@ -46,6 +46,8 @@ class ImeiConsultarSerializer(serializers.ModelSerializer):
 class LogImeiSerializer(serializers.ModelSerializer):
     fecha_bitacora = serializers.DateTimeField(format='%d/%m/%Y %H:%M:%S')
 
+    # operadora = serializers.StringRelatedField(many=True)
+
     class Meta:
         model = log_imei_eir
         fields = [
@@ -118,4 +120,31 @@ class ImeiMasivoActualizarSerializer(serializers.ModelSerializer):
             'fecha_actualizacion',
             'usuario_actualizacion',
             'ip_actualizacion',
+        ]
+
+
+class OperatorCodeRegistroSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = operator
+        fields = [
+            'operator_code',
+            'operator_name'
+        ]
+
+
+class OperatorCodeActualizarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = operator
+        fields = [
+            'operator_code',
+            'operator_name'
+        ]
+
+
+class OperatorCodeConsultaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = operator
+        fields = [
+            'operator_code',
+            'operator_name'
         ]

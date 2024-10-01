@@ -42,3 +42,9 @@ router_imei.register(prefix='log_consulta_fechas', basename='log_consulta_fechas
                      viewset=LogXFechasViewSet)
 router_imei.register(prefix='imeiblack_consulta_v2', basename='imeiblack_consulta_v2',
                      viewset=ImeiBlackConsultaV2ViewSet)
+router_imei.register(prefix='operatorcode_registro', basename='operatorcode_registro',
+                     viewset=OperatorCodeRegistroViewSet)
+router_imei.register(prefix='operatorcode_consulta', basename='operatorcode_consulta',
+                     viewset=OperatorCodeConsultaViewSet)
+router_imei.register(prefix='operatorcode_actualizar', basename='operatorcode_actualizar',
+                     viewset=OperatorCodeActualizarViewSet)
